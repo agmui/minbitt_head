@@ -1,0 +1,4 @@
+circuitpython-stubs==10.2.0
+adafruit-circuitpython-imageload==1.24.7
+adafruit-circuitpython-display-text
+pygame==2.6.1
