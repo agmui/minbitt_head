@@ -8,7 +8,6 @@ import bitmaptools
 from adafruit_display_text import bitmap_label
 from adafruit_bitmap_font import bitmap_font
 
-
 from minbitt_pkg.DisplayInterface import *
 
 
@@ -59,17 +58,12 @@ class LedDisplay(DisplayInterface):
         self.background_bitmap = displayio.Bitmap(self.WIDTH, self.HEIGHT, palette_size)  # 65535)
         self.palette = displayio.Palette(palette_size)
         self.cc = displayio.ColorConverter()
-        r = self.COLOR_KEY[0]
-        g = self.COLOR_KEY[1]
-        b = self.COLOR_KEY[2]
-        # self.color_key_conv = self.cc.convert(r << 16 | g << 8 | b)
-        self.color_key_conv = (r << 16 | g << 8 | b)
         # self.cc.make_transparent(self.color_key_conv)
-        self.palette[0] = self.color_key_conv  # TODO: you can use tuple for palette color init
+        self.palette[0] = self.COLOR_KEY  # TODO: you can use tuple for palette color init
         self.palette[1] = self.cc.convert(0x5FCDE4)  # FIXME: needs to be removed
         self.palette.make_transparent(0)
         self.inverse_palette = {
-            self.color_key_conv: 0,
+            self.COLOR_KEY: 0,
             self.palette[1]: 1
         }
 
@@ -77,8 +71,13 @@ class LedDisplay(DisplayInterface):
         group.append(self.background_tile_grid)
         self.led_display.root_group = group
 
-
         return self
+
+    def get_width(self) -> int:
+        return self.WIDTH
+
+    def get_height(self) -> int:
+        return self.HEIGHT
 
     def load_image(self, image_path, flipped=False):
         # TODO: use flipped field
@@ -123,7 +122,7 @@ class LedDisplay(DisplayInterface):
             # print("tmp_bitmap", tmp_bitmap[1,1], self.palette[tmp_bitmap[1,1]])
             bitmap = tmp_bitmap
 
-            self.background_tile_grid = displayio.TileGrid(self.background_bitmap, pixel_shader=self.palette)
+            self.background_tile_grid = displayio.TileGrid(self.background_bitmap, pixel_shader=self.palette)#TODO: Check if this has to be here
         # print()
 
         # for x in range(bitmap.width):
@@ -148,18 +147,18 @@ class LedDisplay(DisplayInterface):
 
     def draw_line(self, color: color_t, start_pos: Point, end_pos: Point, width: int = 1):
         # bresenham(self.pixel_buff, color, start_pos.trunc(), end_pos.trunc(), width)
-        r = color[0]
-        g = color[1]
-        b = color[2]
-        val = self.cc.convert(r << 16 | g << 8 | b)
+        # r = color[0]
+        # g = color[1]
+        # b = color[2]
+        # val = self.cc.convert(r << 16 | g << 8 | b)
         bitmaptools.draw_line(self.background_bitmap, int(start_pos.x), int(start_pos.y), int(end_pos.x),
                               int(end_pos.y), 1)  # val)
 
     def draw_circle(self, color: color_t, pos: Point, radius: int, fill: bool = False):
-        r = color[0]
-        g = color[1]
-        b = color[2]
-        val = self.cc.convert(r << 16 | g << 8 | b)
+        # r = color[0]
+        # g = color[1]
+        # b = color[2]
+        # val = self.cc.convert(r << 16 | g << 8 | b)
         bitmaptools.draw_circle(self.background_bitmap, int(pos.x), int(pos.y), radius, 1)  # val)#FIXME:
 
     def blit(self, image, pos: Point):
@@ -173,10 +172,11 @@ class LedDisplay(DisplayInterface):
         bitmaptools.blit(self.background_bitmap, image, clamp(int(pos.x), 0, 64), int(pos.y), skip_source_index=0)
 
     def draw_text(self, output_str: str, pos: Point, color):
-        text_area = bitmap_label.Label(self.font, text=output_str, color=0x5FCDE4, color_palette=self.palette) #TODO: add background color
+        text_area = bitmap_label.Label(self.font, text=output_str, color=0x5FCDE4, #FIXME:
+                                       color_palette=self.palette)  # TODO: add background color
         bitmaptools.blit(self.background_bitmap, text_area.bitmap, int(pos.x), int(pos.y), skip_source_index=0)
 
-    def update(self, face_data):
+    def update(self, face_data: BlendshapeData = None):
         # memoryview(self.led_display.framebuffer)[1] = 0xFFFF
         new_time = time.monotonic()
         dt = new_time - self.old_time

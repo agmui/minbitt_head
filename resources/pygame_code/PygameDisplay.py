@@ -23,9 +23,8 @@ class PygameDisplay(DisplayInterface):
     def __init__(self, WIDTH, HEIGHT, COLOR_KEY, FPS=60, scale=10, DEBUG_TEXT_WIDTH=575, DEBUG_TEXT_HEIGHT=600):
         self.WIDTH = WIDTH
         self.HEIGHT = HEIGHT
-        self.COLOR_KEY = COLOR_KEY
-        self.pixel_buff = [[BLACK for _ in range(WIDTH)] for _ in
-                           range(HEIGHT)]  # TODO:lol maybe replace with surface and scale up by 10x
+        self.COLOR_KEY: color_t = COLOR_KEY
+        self.pixel_buff = [[BLACK for _ in range(WIDTH)] for _ in range(HEIGHT)]
         self.FPS = FPS
         self.scale = scale
         self.DEBUG_TEXT_WIDTH = DEBUG_TEXT_WIDTH
@@ -43,11 +42,17 @@ class PygameDisplay(DisplayInterface):
         # self.font = font.SysFont("Calibri", 15, bold=True)
         return self
 
-    def load_image(self, image_path: str, flipped = False) -> Surface:
+    def get_width(self) -> int:
+        return self.WIDTH
+
+    def get_height(self) -> int:
+        return self.HEIGHT
+
+    def load_image(self, image_path: str, flipped=False) -> Surface:
         img = image.load(image_path)
         if flipped:
             img = transform.flip(img, True, False)
-        img.set_colorkey(self.COLOR_KEY)
+        img.set_colorkey(Color(self.COLOR_KEY << 8 | 255))
         return img
 
     def read_input(self) -> HeadInput:
@@ -144,23 +149,22 @@ class PygameDisplay(DisplayInterface):
         for y in range(image.get_height()):
             for x in range(image.get_width()):
                 c = image.get_at((x, y))
-                color = (c.r, c.g, c.b)
-                if color == self.COLOR_KEY:
+                if int(c) >> 8 == self.COLOR_KEY:
                     continue
                 if self.WIDTH <= x or x < 0 or self.HEIGHT <= y or y < 0:  # TODO: can be optimized out if needed
                     continue
-                self.pixel_buff[y + cord[1]][x + cord[0]] = color
+                self.pixel_buff[y + cord[1]][x + cord[0]] = c
 
     def draw_text(self, output_str: str, pos: Point, color: color_t):
-        output_str_t = transform.scale_by(self.font.render(output_str, 0, color), self.scale)
-        output_str_t = transform.scale_by(self.font.render(output_str, 0, color), 5)
-        self.head.blit(output_str_t, (pos*self.scale).trunc())
-        for x in range(output_str_t.get_width()//self.scale):
-            for y in range(output_str_t.get_height()//self.scale):
-                sample_cord = (x * self.scale+5, y * self.scale+5)
-                self.pixel_buff[y+pos.y][x+pos.x] = output_str_t.get_at(sample_cord)[:3]
+        # output_str_t = transform.scale_by(self.font.render(output_str, 0, color), self.scale)  # FIXME:
+        output_str_t = transform.scale_by(self.font.render(output_str, 0, color << 8 | 255), 4)
+        self.head.blit(output_str_t, (pos * self.scale).trunc())
+        for x in range(output_str_t.get_width() // self.scale):
+            for y in range(output_str_t.get_height() // self.scale):
+                sample_cord = (x * self.scale + 5, y * self.scale + 5)
+                self.pixel_buff[y + pos.y][x + pos.x] = output_str_t.get_at(sample_cord)[:3]
 
-    def update(self, face_data: BlendshapeData): #TODO: move face_data rendering into animate function (so can remove in LedDisplay)
+    def update(self, face_data: BlendshapeData = BlendshapeData()):
         self.screen.fill(GREY)
 
         # flipped_img = transform.flip(transform.scale_by(self.head,self.scale), True, False)
@@ -181,9 +185,8 @@ class PygameDisplay(DisplayInterface):
         # print Blendshape values
         offset = self.WIDTH * self.scale + 100
         for i, e in enumerate(sorted(face_data.__dict__)):
-            # print(e,face_data.__dict__[e])
             output_str = e + ": " + str(face_data.__dict__[e])
-            output_str_t = self.font.render(output_str, 1, WHITE)
+            output_str_t = self.font.render(output_str, 1, WHITE << 8 | 255)  # TODO: idk kinda jank
             self.screen.blit(output_str_t, (4 + offset, i * 16))
 
         # display fps

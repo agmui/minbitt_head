@@ -1,23 +1,7 @@
+from minbitt_pkg.EnvSettings import EnvSettings
 from minbitt_pkg.iFacialMocap import *
-from minbitt_pkg.BlendshapeData import decode_msg, BlendshapeData
+from minbitt_pkg.BlendshapeData import BlendshapeData
 from minbitt_pkg.DisplayInterface import *
-
-if __debug__:  # FIXME:
-    from minbitt_pkg.LedDisplay import LedDisplay
-else:
-    from minbitt_pkg.PygameDisplay import PygameDisplay
-
-FPS = 60
-WIDTH = 64
-HEIGHT = 32
-COLOR_KEY = PINK
-
-if __debug__:
-    FPS = 60  # 24
-    proj_env = "/"
-else:
-    FPS = 60
-    proj_env = "/home/agmui/cs/minbitt_head/"  # TODO idk use python path type or something
 
 """
 https://igl.ethz.ch/projects/retargeting/scale-and-stretch/resizing_sAsia.pdf
@@ -30,8 +14,8 @@ class AnimationInterface:
         pass
 
 
-class DemoAnimation(AnimationInterface):
-    def __init__(self, display: DisplayInterface):
+class AnimationTest(AnimationInterface):
+    def __init__(self, display: DisplayInterface, proj_env: str):
         self.display = display
         sprite_dir = "minbitt_pkg/"
         self.L_eye = display.load_image(proj_env + sprite_dir + "sprites/eye/eye1.bmp")
@@ -76,8 +60,10 @@ class DemoAnimation(AnimationInterface):
 
 
 class MinBittAnimation(AnimationInterface):
-    def __init__(self, display: DisplayInterface):
+    def __init__(self, display: DisplayInterface, proj_env: str):
         self.display = display
+        self.WIDTH = self.display.get_width()
+        self.HEIGHT = self.display.get_height()
 
         # == loading sprites ==
         # eyes
@@ -150,8 +136,8 @@ class MinBittAnimation(AnimationInterface):
         if self.prev_input != head_input.face_expr:
             self.prev_input = head_input.face_expr
             self.tv_glitch_animation = True
-        if self.tv_glitch_animation and self.tv_glitch_line < HEIGHT:
-            self.display.draw_line(MINBITT_BLUE, Point(0, self.tv_glitch_line), Point(WIDTH, self.tv_glitch_line))
+        if self.tv_glitch_animation and self.tv_glitch_line < self.HEIGHT:
+            self.display.draw_line(MINBITT_BLUE, Point(0, self.tv_glitch_line), Point(self.WIDTH, self.tv_glitch_line))
             self.tv_glitch_line += 7
             return
         else:
@@ -163,7 +149,7 @@ class MinBittAnimation(AnimationInterface):
             self.display.blit(self.question_expr, Point(0, 0))
             return
         elif head_input.face_expr == FaceExpression.LOCK_IN:
-            self.display.draw_text("LOCK IN", Point(5, HEIGHT // 2 - 4), MINBITT_BLUE)
+            self.display.draw_text("LOCK IN", Point(5, self.HEIGHT // 2 - 4), MINBITT_BLUE)
             return
         elif head_input.face_expr == FaceExpression.POG:
             self.display.blit(self.pog_expr, Point(0, 0))
@@ -197,9 +183,8 @@ class MinBittAnimation(AnimationInterface):
                 self.display.blit(self.L_X3_eye, left_eye_xy)
             else:
                 if head_input.face_expr == FaceExpression.HUG_EYES and eye_index == 0:  # TODO: idk decide if u like
-                    LIGHT_MINBITT_BLUE = (0x5F - 60, 0xCD - 60, 0xE4 - 60)
-                    self.display.draw_line(LIGHT_MINBITT_BLUE, left_eye_xy + Point(0, -30), left_eye_xy + Point(0, 30))
-                    self.display.draw_line(LIGHT_MINBITT_BLUE, left_eye_xy + Point(-30, 2), left_eye_xy + Point(30, 2))
+                    self.display.draw_line(MINBITT_LIGHTBLUE, left_eye_xy + Point(0, -30), left_eye_xy + Point(0, 30))
+                    self.display.draw_line(MINBITT_LIGHTBLUE, left_eye_xy + Point(-30, 2), left_eye_xy + Point(30, 2))
                 # self.display.blit(self.sus_squint, left_eye_xy + (-3, -1))
                 self.display.blit(self.L_eye[eye_index],
                                   left_eye_xy + (-3, -1))  # TODO: check math on offset of X3 face
@@ -263,56 +248,50 @@ class MinBittAnimation(AnimationInterface):
         self.display.blit(self.blush, final_mouth_pos + (-19, 8))
 
 
-def main():
+def main(env_settings: EnvSettings):
     sample_data_dir = "minbitt_pkg/sample_data/"
+    proj_env = env_settings.proj_env
+    d = env_settings.d  # TODO: better name
+    HEIGHT = d.get_height()
+    WIDTH = d.get_width()
 
-    font_path = proj_env + "minbitt_pkg/" + "tom-thumb.pcf"  # https://robey.lag.net/2010/01/23/tiny-monospace-font.html
-    d = LedDisplay(WIDTH, HEIGHT, COLOR_KEY, font_path, FPS) if __debug__ else PygameDisplay(WIDTH, HEIGHT, COLOR_KEY,
-                                                                                             FPS)
-    # TODO: make waiting for connection animation or just debug logs inside CircuitPythonConnections
+    # with env_settings.c as connection, d as display:
+    # with CachedConnection(proj_env+sample_data_dir+"data.txt") as connection,d as display:
+    with MockConnection(proj_env + sample_data_dir + "data.txt") as connection, d as display:
+    # with MockConnection(proj_env+sample_data_dir+"data_raw.txt") as connection,d as display:
+    # with MockConnection("data_eyeWide.txt") as connection,d as display:
+    # with MockConnection("data_cheek_squint.txt") as connection,d as display:
+    # with DebugFaceConnection(proj_env+sample_data_dir+"data.txt", display) as connection,d as display:
 
-    with d as display:
-        # with CachedConnection(proj_env+sample_data_dir+"data.txt") as connection:
-        # with MockConnection(proj_env+sample_data_dir+"data.txt") as connection:
-        # with MockConnection(proj_env+sample_data_dir+"data_raw.txt") as connection:
-        # with MockConnection("data_eyeWide.txt") as connection:
-        # with MockConnection("data_cheek_squint.txt") as connection:
-        # with WifiConnection("192.168.12.23") as connection:
-        # with WifiConnection("192.168.1.60") as connection:
-        # with WifiConnection("192.168.1.60") as connection:
-        with CircuitPythonConnection(display) as connection:
-        # with DebugFaceConnection(proj_env+sample_data_dir+"data.txt", display) as connection:
-
-            # minbitt_animation: AnimationInterface = DemoAnimation(display)
-            minbitt_animation: AnimationInterface = MinBittAnimation(display)
-            # no_wifi_img = display.load_image("sprites/no_wifi.bmp")
-            loading = 0
-            face_data = BlendshapeData()
-            running = True
-            while running:
-                try:
+        # minbitt_animation: AnimationInterface = DemoAnimation(display)
+        minbitt_animation: AnimationInterface = MinBittAnimation(display, proj_env)
+        # no_wifi_img = display.load_image("sprites/no_wifi.bmp")
+        loading = 0
+        running = True
+        while running:
+            try:
+                while running:  # TODO: idk decide if this is ok
                     head_input = display.read_input()
                     running = head_input.running
-                    msg = connection.get_data()
+                    face_data = connection.get_data()
                     # face_data = connection.get_data()
                     # print(msg.decode('utf-8'))
 
-                    decode_msg(msg, face_data)
                     minbitt_animation.animate_face(face_data, head_input)
                     display.update(face_data)
 
-                except TimeoutError: #TODO: handel OSError
-                    # TODO: maybe have cute tv glitch effect(burst.png burst2.png) here instead of no wifi logo
-                    # or put cute tv glitch effect on first turn on of head
-                    # display.blit(no_wifi_img, Point(0, 0))
-                    if loading >= 10:
-                        display.draw_line(MINBITT_BLUE, Point(4, HEIGHT // 2), Point(5, HEIGHT // 2))
-                    if loading >= 20:
-                        display.draw_line(MINBITT_BLUE, Point(8, HEIGHT // 2), Point(9, HEIGHT // 2))
-                    if loading >= 30:
-                        display.draw_line(MINBITT_BLUE, Point(12, HEIGHT // 2), Point(13, HEIGHT // 2))
-                    loading += 1
-                    loading %= 40
-                    print("waiting for frames")
-                    display.update(BlendshapeData())
-        # TODO: handel Network is unreachable if ip cant be found
+            except TimeoutError:  # TODO: handel OSError
+                # TODO: maybe have cute tv glitch effect(burst.png burst2.png) here instead of no wifi logo
+                # or put cute tv glitch effect on first turn on of head
+                # display.blit(no_wifi_img, Point(0, 0))
+                if loading >= 10:
+                    display.draw_line(MINBITT_BLUE, Point(4, HEIGHT // 2), Point(5, HEIGHT // 2))
+                if loading >= 20:
+                    display.draw_line(MINBITT_BLUE, Point(8, HEIGHT // 2), Point(9, HEIGHT // 2))
+                if loading >= 30:
+                    display.draw_line(MINBITT_BLUE, Point(12, HEIGHT // 2), Point(13, HEIGHT // 2))
+                loading += 1
+                loading %= 40
+                print("waiting for frames")
+                display.update()
+    # TODO: handel Network is unreachable if ip cant be found

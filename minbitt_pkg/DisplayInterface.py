@@ -1,27 +1,35 @@
 from math import isnan, sqrt, exp
 from minbitt_pkg.BlendshapeData import BlendshapeData
 
-class Tuple:
-    pass
+
+#TODO:
 class List:
     pass
 
-color_t = Tuple#[int, int, int]
-img_t = List#[list[color_t]]
 
-RED = (255, 0, 0)
-GREEN = (0, 255, 0)
-BLUE = (0, 0, 255)
-MINBITT_BLUE = (0x5F, 0xCD, 0xE4)  # 0x5FCDE4
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
-GREY = (110, 110, 110)
-PINK = (255, 0, 255)
+color_t = int  # Tuple#[int, int, int]
+img_t = List  # [list[color_t]]
 
-
-# # FIXME:
-# class Point:
-#     pass
+# RED = 0xff0000# (255, 0, 0))
+# GREEN = 0x00ff00#(0, 255, 0))
+# BLUE = 0x0000ff# (0, 0, 255))
+# MINBITT_BLUE = 0x5FCDE4#)  # (0x5F, 0xCD, 0xE4)  # 0x5FCDE4
+# MINBITT_LIGHTBLUE = 0x88EBFF#)
+# BLACK = 0  # (0, 0, 0)
+# WHITE = 0xFFFFFF#)  # (255, 255, 255)
+# GREY = 0x6e6e6e  # (110, 110, 110)
+# PINK = 0xFF00FF  # (255, 0, 255)
+import displayio
+cc = displayio.ColorConverter()
+RED = cc.convert( (255, 0, 0))
+GREEN = cc.convert((0, 255, 0))
+BLUE = cc.convert( (0, 0, 255))
+MINBITT_BLUE = cc.convert(0x5FCDE4)  # (0x5F, 0xCD, 0xE4)  # 0x5FCDE4
+MINBITT_LIGHTBLUE = cc.convert(0x88EBFF)
+BLACK = 0  # (0, 0, 0)
+WHITE = cc.convert(0xFFFFFF)  # (255, 255, 255)
+GREY = cc.convert(0x6e6e6e)  # (110, 110, 110)
+PINK = cc.convert(0xFF00FF)  # (255, 0, 255)
 
 
 class Point:
@@ -38,9 +46,6 @@ class Point:
     def __mul__(self, other: float):
         return Point(other * self.x, other * self.y)
 
-    # def __mul__(self, other: float):
-    #     return Point(int(other * self.x), int(other * self.y))
-
     def __getitem__(self, item) -> float:
         return self.x if item == 0 else self.y
 
@@ -50,7 +55,6 @@ class Point:
 
     def trunc(self) -> tuple[int, int]:
         return int(self.x), int(self.y)
-
 
 
 # class GenericImage:
@@ -66,7 +70,7 @@ class Point:
 #     def flip_y(self) -> None:
 #         pass
 
-class FaceExpression:#(Enum):
+class FaceExpression:  # (Enum):
     NA = 0
     QUESTION = 1
     NOTE = 2
@@ -84,6 +88,12 @@ class HeadInput:
 class DisplayInterface:
 
     def __enter__(self):
+        pass
+
+    def get_width(self) -> int:
+        pass
+
+    def get_height(self) -> int:
         pass
 
     def load_image(self, image_path, flipped=False):  # -> GenericImage:
@@ -104,7 +114,7 @@ class DisplayInterface:
     def draw_text(self, output_str: str, pos: Point, color: color_t):
         pass
 
-    def update(self, face_data: BlendshapeData):
+    def update(self, face_data: BlendshapeData = None):
         pass
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -148,11 +158,13 @@ def bresenham(pixel_buff: img_t, color: color_t, start_pos: tuple[int, int], end
     y = y0
     for x in range(x0, x1):
         if swap:  # TODO: can be optimized out
-            if 0 > y or y >= len(pixel_buff[0]) or 0> x or x >= len(pixel_buff):  # TODO: can be optimized out if needed
+            if 0 > y or y >= len(pixel_buff[0]) or 0 > x or x >= len(
+                    pixel_buff):  # TODO: can be optimized out if needed
                 continue
             pixel_buff[x][y] = color
         else:
-            if 0 > y or y >= len(pixel_buff) or 0> x or x >= len(pixel_buff[0]):  # TODO: can be optimized out if needed
+            if 0 > y or y >= len(pixel_buff) or 0 > x or x >= len(
+                    pixel_buff[0]):  # TODO: can be optimized out if needed
                 continue
             pixel_buff[y][x] = color
 
@@ -247,9 +259,9 @@ class QuadraticBezierCurve:
                 if dx == 0:
                     self.lines[i] = ((0, y), intersect0 if intersect0 is not None else intersect1)
                     continue
-                m = (self.p2[1] - self.p0[1]) / dx+0.0001#FIXME: this +0.0001 prevents m=0 and div by 0
+                m = (self.p2[1] - self.p0[1]) / dx + 0.0001  # FIXME: this +0.0001 prevents m=0 and div by 0
                 b = self.p0[1] - m * self.p0[0]
-                diag_x = (y - b) / m #FIXME prevent div by 0
+                diag_x = (y - b) / m  # FIXME prevent div by 0
                 if intersect0 is not None:
                     self.lines[i] = (intersect0, (diag_x, y))
                 elif intersect1 is not None:
