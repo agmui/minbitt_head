@@ -3,7 +3,7 @@ from socket import *
 from minbitt_pkg.iFacialMocap import ConnectionInterface, decode_iFacialMocap
 from minbitt_pkg.BlendshapeData import BlendshapeData
 
-class WifiConnection(ConnectionInterface):
+class PygameConnection(ConnectionInterface):
     def __init__(self, ip: str, port=49983):
         self.server: socket
         self.DstIP: str = ip
@@ -34,7 +34,7 @@ class WifiConnection(ConnectionInterface):
         pass
 
 if __name__ == "__main__":
-    with WifiConnection("192.168.12.23") as connection:#, open("data_raw.txt", "wb") as f:
+    with PygameConnection("192.168.12.23") as connection:#, open("data_raw.txt", "wb") as f:
         while True:
             try:
                 msg = connection.get_data()

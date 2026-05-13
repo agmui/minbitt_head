@@ -3,22 +3,6 @@ from pygame import *
 import pygame.event
 
 
-# class PygameImage(GenericImage):
-#     def __init__(self, image: Surface):
-#         self.image = image
-#
-#     def width(self):
-#         return self.image.get_width()
-#
-#     def height(self):
-#         return self.image.get_height()
-#
-#     def flip_x(self):
-#         transform.flip(self.image, True, False)
-#
-#     def flip_y(self):
-#         transform.flip(self.image, False, True)
-
 class PygameDisplay(DisplayInterface):
     def __init__(self, WIDTH, HEIGHT, COLOR_KEY, FPS=60, scale=10, DEBUG_TEXT_WIDTH=575, DEBUG_TEXT_HEIGHT=600):
         self.WIDTH = WIDTH
