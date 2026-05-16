@@ -7,12 +7,13 @@ import adafruit_imageload
 import bitmaptools
 from adafruit_display_text import bitmap_label
 from adafruit_bitmap_font import bitmap_font
+import gifio
 
 from minbitt_pkg.DisplayInterface import *
 
 
 class LedDisplay(DisplayInterface):
-    def __init__(self, WIDTH, HEIGHT, COLOR_KEY, font_path, FPS=60):
+    def __init__(self, WIDTH, HEIGHT, COLOR_KEY, font_path, FPS=60, palett_size=50):
         self.WIDTH = WIDTH
         self.HEIGHT = HEIGHT
         self.COLOR_KEY = COLOR_KEY
@@ -20,6 +21,11 @@ class LedDisplay(DisplayInterface):
 
         self.old_time = time.monotonic()
         self.font = bitmap_font.load_font(font_path)
+
+        self.palette_size = palett_size  # TODO: idk make sure this is never reached by doing reallocs when reaching limit
+        if __debug__:
+            self.avg = [0 for _ in range(20)]
+            self.i = 0
 
     def __enter__(self):
         # release olf display
@@ -54,18 +60,12 @@ class LedDisplay(DisplayInterface):
         # Create a display
         self.led_display = framebufferio.FramebufferDisplay(matrix, auto_refresh=False)
         group = displayio.Group()
-        palette_size = 50  # TODO: idk make sure this is never reached or something
-        self.background_bitmap = displayio.Bitmap(self.WIDTH, self.HEIGHT, palette_size)  # 65535)
-        self.palette = displayio.Palette(palette_size)
+        self.background_bitmap = displayio.Bitmap(self.WIDTH, self.HEIGHT, self.palette_size)
+        self.palette = displayio.Palette(self.palette_size)
         self.cc = displayio.ColorConverter()
-        # self.cc.make_transparent(self.color_key_conv)
-        self.palette[0] = self.COLOR_KEY  # TODO: you can use tuple for palette color init
-        self.palette[1] = self.cc.convert(0x5FCDE4)  # FIXME: needs to be removed
+        self.palette[0] = self.COLOR_KEY
         self.palette.make_transparent(0)
-        self.inverse_palette = {
-            self.COLOR_KEY: 0,
-            self.palette[1]: 1
-        }
+        self.inverse_palette = {self.COLOR_KEY: 0, }
 
         self.background_tile_grid = displayio.TileGrid(self.background_bitmap, pixel_shader=self.palette)
         group.append(self.background_tile_grid)
@@ -80,18 +80,18 @@ class LedDisplay(DisplayInterface):
         return self.HEIGHT
 
     def load_image(self, image_path, flipped=False):
-        # TODO: use flipped field
-        # TODO: use adafruit_imageload.load https://learn.adafruit.com/circuitpython-display-support-using-displayio/display-a-bitmap
         # TODO: idk try loading gifs cuz adafruit_imageload supports gifs
-        # assert flipped == False and "flipped NYI"
 
         bitmap, img_palette = adafruit_imageload.load(image_path, bitmap=displayio.Bitmap, palette=displayio.Palette)
-        # img = displayio.OnDiskBitmap(image_path)
-        # bitmap = img
-        # img_palette = img.pixel_shader
-
         print(image_path, img_palette)
-        # TODO: maybe its worth trying to turn all images into RGB565 and not need to manage a palette
+
+        if flipped:
+            tmp_bitmap = displayio.Bitmap(bitmap.width, bitmap.height, len(self.palette))
+            for x in range(bitmap.width):
+                for y in range(bitmap.height):
+                    tmp_bitmap[bitmap.width - x - 1, y] = bitmap[x, y]
+            bitmap = tmp_bitmap
+
         if type(img_palette) == displayio.ColorConverter:
             r = self.COLOR_KEY[0]
             g = self.COLOR_KEY[1]
@@ -103,26 +103,20 @@ class LedDisplay(DisplayInterface):
             tmp_bitmap = displayio.Bitmap(bitmap.width, bitmap.height, len(self.palette))
             translate = {}
             for i, c in enumerate(img_palette):
-                # c = self.cc.convert(c)
-                # print(c in self.inverse_palette, c, self.inverse_palette)
-                # for j, p in enumerate(self.palette):
-                #     print(j ,'->', f'{p:06x}')
                 if c not in self.inverse_palette:
-                    # print("adding color")
                     index = len(self.inverse_palette)
                     self.palette[index] = c
                     self.inverse_palette[c] = index
-                    # print("translate:",i, index)
                     translate[i] = index
                 else:
                     translate[i] = self.inverse_palette[c]
             for x in range(tmp_bitmap.width):
                 for y in range(tmp_bitmap.height):
                     tmp_bitmap[x, y] = translate[bitmap[x, y]]
-            # print("tmp_bitmap", tmp_bitmap[1,1], self.palette[tmp_bitmap[1,1]])
             bitmap = tmp_bitmap
 
-            self.background_tile_grid = displayio.TileGrid(self.background_bitmap, pixel_shader=self.palette)#TODO: Check if this has to be here
+            self.background_tile_grid = displayio.TileGrid(self.background_bitmap,
+                                                           pixel_shader=self.palette)  # TODO: Check if this has to be here
         # print()
 
         # for x in range(bitmap.width):
@@ -139,27 +133,44 @@ class LedDisplay(DisplayInterface):
         # img_group.hidden = True
         # return img_group
 
-        return bitmap
+        return const(bitmap)  # TODO: idk test performance
+
+
+    def load_gif(self, gif_path: str) -> tuple[gifio.OnDiskGif, displayio.TileGrid]:
+        odg = gifio.OnDiskGif(gif_path)
+        print(gif_path, odg.palette, odg.frame_count)
+        odg.next_frame()
+        face = displayio.TileGrid(
+            odg.bitmap,
+            pixel_shader=displayio.ColorConverter(
+                input_colorspace=displayio.Colorspace.RGB565_SWAPPED
+            ),
+        )
+        self.led_display.root_group.append(face)
+        face.hidden = True
+        return odg, face
 
     # TODO: better name
     def read_input(self) -> HeadInput:
         return HeadInput(True, FaceExpression.NA)
 
     def draw_line(self, color: color_t, start_pos: Point, end_pos: Point, width: int = 1):
+        if color not in self.inverse_palette:
+            palette_index = len(self.inverse_palette)
+            self.palette[palette_index] = color
+            self.inverse_palette[color] = palette_index
+            # TODO: check if this needs to be called
+            # self.background_tile_grid = displayio.TileGrid(self.background_bitmap, pixel_shader=self.palette)
         # bresenham(self.pixel_buff, color, start_pos.trunc(), end_pos.trunc(), width)
-        # r = color[0]
-        # g = color[1]
-        # b = color[2]
-        # val = self.cc.convert(r << 16 | g << 8 | b)
         bitmaptools.draw_line(self.background_bitmap, int(start_pos.x), int(start_pos.y), int(end_pos.x),
-                              int(end_pos.y), 1)  # val)
+                              int(end_pos.y), self.inverse_palette[color])
 
     def draw_circle(self, color: color_t, pos: Point, radius: int, fill: bool = False):
-        # r = color[0]
-        # g = color[1]
-        # b = color[2]
-        # val = self.cc.convert(r << 16 | g << 8 | b)
-        bitmaptools.draw_circle(self.background_bitmap, int(pos.x), int(pos.y), radius, 1)  # val)#FIXME:
+        if color not in self.inverse_palette:
+            palette_index = len(self.inverse_palette)
+            self.palette[palette_index] = color
+            self.inverse_palette[color] = palette_index
+        bitmaptools.draw_circle(self.background_bitmap, int(pos.x), int(pos.y), radius, self.inverse_palette[color])
 
     def blit(self, image, pos: Point):
         # tg.hidden = False
@@ -172,17 +183,40 @@ class LedDisplay(DisplayInterface):
         bitmaptools.blit(self.background_bitmap, image, clamp(int(pos.x), 0, 64), int(pos.y), skip_source_index=0)
 
     def draw_text(self, output_str: str, pos: Point, color):
-        text_area = bitmap_label.Label(self.font, text=output_str, color=0x5FCDE4, #FIXME:
-                                       color_palette=self.palette)  # TODO: add background color
-        bitmaptools.blit(self.background_bitmap, text_area.bitmap, int(pos.x), int(pos.y), skip_source_index=0)
+        if color not in self.inverse_palette:
+            palette_index = len(self.inverse_palette)
+            self.palette[palette_index] = color
+            self.inverse_palette[color] = palette_index
+        text_area = bitmap_label.Label(self.font, text=output_str).bitmap
+
+        # this is a hack
+        tmp_bitmap = displayio.Bitmap(text_area.width, text_area.height, 3)
+        bitmaptools.blit(tmp_bitmap, text_area, 0, 0)
+        bitmaptools.replace_color(tmp_bitmap, 1, self.inverse_palette[color])
+
+        bitmaptools.blit(self.background_bitmap, tmp_bitmap, int(pos.x), int(pos.y), skip_source_index=0)
+
+
+    def draw_gif(self, gif: tuple[gifio.OnDiskGif, displayio.TileGrid], pos: Point):
+        odg, face = gif
+        face.hidden = False
+        face.x = int(pos.x)
+        face.y = int(pos.y)
+        odg.next_frame()
 
     def update(self, face_data: BlendshapeData = None):
         # memoryview(self.led_display.framebuffer)[1] = 0xFFFF
         new_time = time.monotonic()
         dt = new_time - self.old_time
         self.old_time = new_time
-        fps = f"FPS: {1 / dt}"
-        print(fps)
+        if __debug__:
+            fps = f"FPS: {1 / dt}"
+            # print(fps)
+
+            self.avg[self.i] = 1 / dt
+            print(sum(self.avg) / 20)
+            self.i += 1
+            self.i %= 20
 
         # for x in range(self.background_bitmap.width):
         #     for y in range(self.background_bitmap.height):
@@ -207,7 +241,6 @@ class LedDisplay(DisplayInterface):
         # self.background_tile_grid.hidden = False
 
         self.background_bitmap.fill(0)
-        # TODO: idk run gc
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         # TODO: add free code to all obj

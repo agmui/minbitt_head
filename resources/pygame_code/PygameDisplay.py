@@ -39,6 +39,9 @@ class PygameDisplay(DisplayInterface):
         img.set_colorkey(Color(self.COLOR_KEY << 8 | 255))
         return img
 
+    def load_gif(self, gif_path: str):
+        return pygame.image.load(gif_path).convert_alpha()
+
     def read_input(self) -> HeadInput:
         for event in pygame.event.get():
             if event.type == QUIT or (
@@ -52,7 +55,7 @@ class PygameDisplay(DisplayInterface):
             return HeadInput(True, FaceExpression.HUG_EYES)
         elif pygame.key.get_pressed()[K_f]:
             return HeadInput(True, FaceExpression.POG)
-        return HeadInput(True, FaceExpression.NA)
+        return HeadInput(True, FaceExpression.FIRE)#NA)
 
     def draw_line(self, color: color_t, start_pos: Point, end_pos: Point, width: int = 1):
         draw.line(self.head, color, tuple(start_pos * self.scale), tuple(end_pos * self.scale), width * self.scale)
@@ -147,6 +150,9 @@ class PygameDisplay(DisplayInterface):
             for y in range(output_str_t.get_height() // self.scale):
                 sample_cord = (x * self.scale + 5, y * self.scale + 5)
                 self.pixel_buff[y + pos.y][x + pos.x] = output_str_t.get_at(sample_cord)[:3]
+
+    def draw_gif(self, gif, pos: Point):
+        self.head.blit(transform.scale_by(gif, self.scale), tuple(pos * self.scale))
 
     def update(self, face_data: BlendshapeData = BlendshapeData()):
         self.screen.fill(GREY)

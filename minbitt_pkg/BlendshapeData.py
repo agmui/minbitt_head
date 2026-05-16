@@ -29,65 +29,66 @@ class HeadData:
         return f"{self.ax:.5f}, {self.ay:.5f}, {self.az:.5f} {self.x: .5f}, {self.y: .5f}, {self.z: .5f}"
 
 
-# descriptions of blendshapes: https://developer.apple.com/documentation/arkit/arfaceanchor/blendshapelocation
 class BlendshapeData:
     """
     Class to hold iFacialMocap output data
+    descriptions of blendshapes: https://developer.apple.com/documentation/arkit/arfaceanchor/blendshapelocation
+    all values go from 0 - 100 except for Head and Eye Data
 
-    trackingStatus - 1 |
-    mouthLowerDown_L - 0 |
-    mouthFunnel - 0 |
-    eyeSquint_L - 2 |
-    jawLeft - 0 |
-    eyeBlink_L - 0 |
-    mouthPucker - 3 |
-    mouthFrown_L - 1 |
-    browDown_R - 0 |
-    mouthSmile_L - 0 |
-    eyeLookIn_R - 0 |
-    mouthRight - 0 |
-    browInnerUp - 2 |
-    eyeLookDown_L - 25 |
-    mouthSmile_R - 0 |
-    tongueOut - 0 |
-    mouthPress_L - 2 |
-    mouthUpperUp_L - 0 |
-    jawRight - 0 |
-    mouthStretch_L - 1 |
-    mouthDimple_R - 1 |
-    mouthDimple_L - 1 |
-    cheekPuff - 0 |
-    eyeLookIn_L - 25 |
-    eyeLookOut_L - 0 |
-    eyeWide_R - 4 |
-    eyeLookDown_R - 25 |
-    eyeLookUp_R - 0 |
-    mouthRollLower - 1 |
-    browDown_L - 0 |
-    eyeWide_L - 4 |
-    mouthStretch_R - 1 |
-    browOuterUp_L - 0 |
-    noseSneer_L - 3 |
-    mouthLowerDown_R - 0 |
-    eyeSquint_R - 2 |
-    mouthPress_R - 2 |
-    jawOpen - 0 |
-    mouthClose - 0 |
-    eyeBlink_R - 0 |
-    cheekSquint_L - 1 |
-    noseSneer_R - 3 |
-    jawForward - 0 |
-    mouthRollUpper - 0 |
-    eyeLookOut_R - 13 |
-    mouthUpperUp_R - 0 |
-    eyeLookUp_L - 0 |
-    mouthShrugUpper - 4 |
-    mouthLeft - 0 |
-    mouthFrown_R - 3 |
-    mouthShrugLower - 5 |
-    cheekSquint_R - 1 |
-    browOuterUp_R - 1 |
-    hapihapi - 0 |
+    trackingStatus
+    mouthLowerDown_L
+    mouthFunnel
+    eyeSquint_L
+    jawLeft
+    eyeBlink_L
+    mouthPucker
+    mouthFrown_L
+    browDown_R
+    mouthSmile_L
+    eyeLookIn_R
+    mouthRight
+    browInnerUp
+    eyeLookDown_L
+    mouthSmile_R
+    tongueOut
+    mouthPress_L
+    mouthUpperUp_L
+    jawRight
+    mouthStretch_L
+    mouthDimple_R
+    mouthDimple_L
+    cheekPuff
+    eyeLookIn_L
+    eyeLookOut_L
+    eyeWide_R
+    eyeLookDown_R
+    eyeLookUp_R
+    mouthRollLower
+    browDown_L
+    eyeWide_L
+    mouthStretch_R
+    browOuterUp_L
+    noseSneer_L
+    mouthLowerDown_R
+    eyeSquint_R
+    mouthPress_R
+    jawOpen
+    mouthClose
+    eyeBlink_R
+    cheekSquint_L
+    noseSneer_R
+    jawForward
+    mouthRollUpper
+    eyeLookOut_R
+    mouthUpperUp_R
+    eyeLookUp_L
+    mouthShrugUpper
+    mouthLeft
+    mouthFrown_R
+    mouthShrugLower
+    cheekSquint_R
+    browOuterUp_R
+    hapihapi
 
     :param
         head:
@@ -182,10 +183,3 @@ class BlendshapeData:
         return ((self.mouthSmile_L + self.mouthSmile_R) - (self.mouthFrown_L + self.mouthFrown_R)) / 2.0
 
 
-
-#TODO: move into iFacialMocap.py
-# if __name__ == "__main__":
-#     msg = b"trackingStatus-1|mouthLowerDown_L-0|mouthFunnel-0|eyeSquint_L-2|jawLeft-0|eyeBlink_L-0|mouthPucker-3|mouthFrown_L-1|browDown_R-0|mouthSmile_L-0|eyeLookIn_R-0|mouthRight-0|browInnerUp-2|eyeLookDown_L-25|mouthSmile_R-0|tongueOut-0|mouthPress_L-2|mouthUpperUp_L-0|jawRight-0|mouthStretch_L-1|mouthDimple_R-1|mouthDimple_L-1|cheekPuff-0|eyeLookIn_L-25|eyeLookOut_L-0|eyeWide_R-4|eyeLookDown_R-25|eyeLookUp_R-0|mouthRollLower-1|browDown_L-0|eyeWide_L-4|mouthStretch_R-1|browOuterUp_L-0|noseSneer_L-3|mouthLowerDown_R-0|eyeSquint_R-2|mouthPress_R-2|jawOpen-0|mouthClose-0|eyeBlink_R-0|cheekSquint_L-1|noseSneer_R-3|jawForward-0|mouthRollUpper-0|eyeLookOut_R-13|mouthUpperUp_R-0|eyeLookUp_L-0|mouthShrugUpper-4|mouthLeft-0|mouthFrown_R-3|mouthShrugLower-5|cheekSquint_R-1|browOuterUp_R-1|hapihapi-0|=head#-16.512114,4.3503346,0.26299524,0.032684557,-0.08100321,-0.39741653|rightEye#8.96733,-4.780719,-0.74686855|leftEye#8.807489,-9.080697,-1.4018708|"
-#     bd = BlendshapeData()
-#     decode_msg(bytearray(msg),bd)
-#     print(bd)

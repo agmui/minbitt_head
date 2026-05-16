@@ -1,35 +1,18 @@
 from math import isnan, sqrt, exp
 from minbitt_pkg.BlendshapeData import BlendshapeData
+from micropython import const
 
+color_t = int
 
-#TODO:
-class List:
-    pass
-
-
-color_t = int  # Tuple#[int, int, int]
-img_t = List  # [list[color_t]]
-
-# RED = 0xff0000# (255, 0, 0))
-# GREEN = 0x00ff00#(0, 255, 0))
-# BLUE = 0x0000ff# (0, 0, 255))
-# MINBITT_BLUE = 0x5FCDE4#)  # (0x5F, 0xCD, 0xE4)  # 0x5FCDE4
-# MINBITT_LIGHTBLUE = 0x88EBFF#)
-# BLACK = 0  # (0, 0, 0)
-# WHITE = 0xFFFFFF#)  # (255, 255, 255)
-# GREY = 0x6e6e6e  # (110, 110, 110)
-# PINK = 0xFF00FF  # (255, 0, 255)
-import displayio
-cc = displayio.ColorConverter()
-RED = cc.convert( (255, 0, 0))
-GREEN = cc.convert((0, 255, 0))
-BLUE = cc.convert( (0, 0, 255))
-MINBITT_BLUE = cc.convert(0x5FCDE4)  # (0x5F, 0xCD, 0xE4)  # 0x5FCDE4
-MINBITT_LIGHTBLUE = cc.convert(0x88EBFF)
-BLACK = 0  # (0, 0, 0)
-WHITE = cc.convert(0xFFFFFF)  # (255, 255, 255)
-GREY = cc.convert(0x6e6e6e)  # (110, 110, 110)
-PINK = cc.convert(0xFF00FF)  # (255, 0, 255)
+RED = const(0xff0000)  # (255, 0, 0))
+GREEN = const(0x00ff00)  # (0, 255, 0))
+BLUE = const(0x0000ff)  # (0, 0, 255))
+MINBITT_BLUE = const(0x5FCDE4)  # (0x5F, 0xCD, 0xE4)
+MINBITT_LIGHTBLUE = const(0x88EBFF)
+BLACK = const(0)  # (0, 0, 0)
+WHITE = const(0xFFFFFF)  # (255, 255, 255)
+GREY = const(0x6e6e6e)  # (110, 110, 110)
+PINK = const(0xFF00FF)  # (255, 0, 255)
 
 
 class Point:
@@ -57,26 +40,14 @@ class Point:
         return int(self.x), int(self.y)
 
 
-# class GenericImage:
-#     def width(self) -> int:
-#         pass
-#
-#     def height(self) -> int:
-#         pass
-#
-#     def flip_x(self) -> None:
-#         pass
-#
-#     def flip_y(self) -> None:
-#         pass
-
 class FaceExpression:  # (Enum):
-    NA = 0
-    QUESTION = 1
-    NOTE = 2
-    LOCK_IN = 3
-    HUG_EYES = 4
-    POG = 5
+    NA = const(0)
+    QUESTION = const(1)
+    NOTE = const(2)
+    LOCK_IN = const(3)
+    HUG_EYES = const(4)
+    POG = const(5)
+    FIRE = const(6)
 
 
 class HeadInput:
@@ -99,6 +70,9 @@ class DisplayInterface:
     def load_image(self, image_path, flipped=False):  # -> GenericImage:
         pass
 
+    def load_gif(self, gif_path: str):
+        pass
+
     def read_input(self) -> HeadInput:
         pass
 
@@ -114,6 +88,9 @@ class DisplayInterface:
     def draw_text(self, output_str: str, pos: Point, color: color_t):
         pass
 
+    def draw_gif(self, gif, pos: Point):
+        pass
+
     def update(self, face_data: BlendshapeData = None):
         pass
 
@@ -121,7 +98,7 @@ class DisplayInterface:
         pass
 
 
-def bresenham(pixel_buff: img_t, color: color_t, start_pos: tuple[int, int], end_pos: tuple[int, int], width: int = 1):
+def bresenham(pixel_buff, color: color_t, start_pos: tuple[int, int], end_pos: tuple[int, int], width: int = 1):
     """
     uses Bresenham's line algorithm
     :param pixel_buff:
@@ -131,9 +108,6 @@ def bresenham(pixel_buff: img_t, color: color_t, start_pos: tuple[int, int], end
     :param width:
     :return:
     """
-    # if not (start_pos[0] >= 0 and start_pos[1] >= 0 and end_pos[0] >= 0 and end_pos[1] >= 0):
-    #     return  # TODO: can be optimized out if needed
-    # assert start_pos[0] >= 0 and start_pos[1] >= 0 and end_pos[0] >= 0 and end_pos[1] >= 0
 
     x0, y0 = start_pos
     x1, y1 = end_pos
@@ -157,14 +131,14 @@ def bresenham(pixel_buff: img_t, color: color_t, start_pos: tuple[int, int], end
     slope_error_new = double_dy - dx
     y = y0
     for x in range(x0, x1):
-        if swap:  # TODO: can be optimized out
+        if swap:  # can be optimized out
             if 0 > y or y >= len(pixel_buff[0]) or 0 > x or x >= len(
-                    pixel_buff):  # TODO: can be optimized out if needed
+                    pixel_buff):  # can be optimized out if needed
                 continue
             pixel_buff[x][y] = color
         else:
             if 0 > y or y >= len(pixel_buff) or 0 > x or x >= len(
-                    pixel_buff[0]):  # TODO: can be optimized out if needed
+                    pixel_buff[0]):  # can be optimized out if needed
                 continue
             pixel_buff[y][x] = color
 

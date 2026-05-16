@@ -17,7 +17,7 @@ class PygameConnection(ConnectionInterface):
         data = "iFacialMocap_sahuasouryya9218sauhuiayeta91555dy3719"
         data = data.encode('utf-8')
         udpClntSock.sendto(data, DstAddr)
-        # udpClntSock.close() #TODO: idk test
+        udpClntSock.close()
 
         self.server = socket(AF_INET, SOCK_DGRAM)
         self.server.bind(("", 49983))
