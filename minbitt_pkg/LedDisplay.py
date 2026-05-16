@@ -5,6 +5,7 @@ import framebufferio  # For showing things on the display
 import rgbmatrix  # For talking to matrices specifically
 import adafruit_imageload
 import bitmaptools
+import rgbmatrix
 from adafruit_display_text import bitmap_label
 from adafruit_bitmap_font import bitmap_font
 import gifio
@@ -13,9 +14,10 @@ from minbitt_pkg.DisplayInterface import *
 
 
 class LedDisplay(DisplayInterface):
-    def __init__(self, WIDTH, HEIGHT, COLOR_KEY, font_path, FPS=60, palett_size=50):
-        self.WIDTH = WIDTH
-        self.HEIGHT = HEIGHT
+    def __init__(self, matrix: rgbmatrix.RGBMatrix, COLOR_KEY, font_path, FPS=60, palett_size=50):
+        self.matrix = matrix
+        self.WIDTH = matrix.width
+        self.HEIGHT = matrix.height
         self.COLOR_KEY = COLOR_KEY
         self.FPS = FPS
 
@@ -28,37 +30,8 @@ class LedDisplay(DisplayInterface):
             self.i = 0
 
     def __enter__(self):
-        # release olf display
-        displayio.release_displays()
-        # Setup rgbmatrix display (change pins to match your wiring)
-        matrix = rgbmatrix.RGBMatrix(
-            width=self.WIDTH,  # Change width & height if you have an LED matrix with different dimensions
-            height=self.HEIGHT,
-            bit_depth=2,
-            rgb_pins=[  # Preserve GP4 & GP5 for standard STEMMA-QT
-                board.GP2,  # R1
-                board.GP3,  # G1
-                board.GP6,  # B1
-                board.GP7,  # R2
-                board.GP8,  # G2
-                board.GP9  # B2
-            ],
-            addr_pins=[
-                board.GP10,  # A
-                board.GP16,  # B
-                board.GP18,  # C
-                board.GP20  # D
-            ],
-            clock_pin=board.GP11,
-            latch_pin=board.GP12,
-            output_enable_pin=board.GP13,
-            tile=1,
-            serpentine=False,
-            doublebuffer=True,
-        )
-
         # Create a display
-        self.led_display = framebufferio.FramebufferDisplay(matrix, auto_refresh=False)
+        self.led_display = framebufferio.FramebufferDisplay(self.matrix, auto_refresh=False)
         group = displayio.Group()
         self.background_bitmap = displayio.Bitmap(self.WIDTH, self.HEIGHT, self.palette_size)
         self.palette = displayio.Palette(self.palette_size)
@@ -80,25 +53,18 @@ class LedDisplay(DisplayInterface):
         return self.HEIGHT
 
     def load_image(self, image_path, flipped=False):
-        # TODO: idk try loading gifs cuz adafruit_imageload supports gifs
-
         bitmap, img_palette = adafruit_imageload.load(image_path, bitmap=displayio.Bitmap, palette=displayio.Palette)
-        print(image_path, img_palette)
+        if __debug__:
+            print(image_path, img_palette)
 
         if flipped:
-            tmp_bitmap = displayio.Bitmap(bitmap.width, bitmap.height, len(self.palette))
-            for x in range(bitmap.width):
+            for x in range(bitmap.width//2):
                 for y in range(bitmap.height):
-                    tmp_bitmap[bitmap.width - x - 1, y] = bitmap[x, y]
-            bitmap = tmp_bitmap
+                    bitmap[bitmap.width-x-1,y], bitmap[x,y] = bitmap[x,y], bitmap[bitmap.width-x-1,y]
 
         if type(img_palette) == displayio.ColorConverter:
-            r = self.COLOR_KEY[0]
-            g = self.COLOR_KEY[1]
-            b = self.COLOR_KEY[2]
-            img_palette.make_transparent(r << 16 | g << 8 | b)
             # TODO: use bitmaptools.replace_color()
-            # also use dithering to avoid going over palette 50 color limit
+            raise NotImplementedError("LedDisplay palette did not implement for ColorConverter case")#TODO:
         elif type(img_palette) == displayio.Palette:
             tmp_bitmap = displayio.Bitmap(bitmap.width, bitmap.height, len(self.palette))
             translate = {}
@@ -138,7 +104,8 @@ class LedDisplay(DisplayInterface):
 
     def load_gif(self, gif_path: str) -> tuple[gifio.OnDiskGif, displayio.TileGrid]:
         odg = gifio.OnDiskGif(gif_path)
-        print(gif_path, odg.palette, odg.frame_count)
+        if __debug__:
+            print(gif_path, odg.palette, odg.frame_count)
         odg.next_frame()
         face = displayio.TileGrid(
             odg.bitmap,
@@ -150,7 +117,6 @@ class LedDisplay(DisplayInterface):
         face.hidden = True
         return odg, face
 
-    # TODO: better name
     def read_input(self) -> HeadInput:
         return HeadInput(True, FaceExpression.NA)
 
@@ -243,5 +209,7 @@ class LedDisplay(DisplayInterface):
         self.background_bitmap.fill(0)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        # TODO: add free code to all obj
-        pass
+        self.background_bitmap.deinit()
+        self.led_display.framebuffer.deinit()
+        # release olf display
+        displayio.release_displays()
