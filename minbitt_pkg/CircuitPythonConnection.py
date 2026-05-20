@@ -3,7 +3,8 @@ import time
 from socketpool import *
 import wifi
 
-from minbitt_pkg.iFacialMocap import ConnectionInterface, decode_iFacialMocap
+from minbitt_pkg.iFacialMocap import ConnectionInterface
+from minbitt_pkg.decode_iFacialMocap import *
 from minbitt_pkg.DisplayInterface import *
 from minbitt_pkg.BlendshapeData import BlendshapeData
 
@@ -111,7 +112,8 @@ class CircuitPythonConnection(ConnectionInterface):
         # msg_size, address = self.server.recvfrom_into(bytearray(1024))
         msg_size, address = self.server.recvfrom_into(buf)  # Note can also throw OSError: [Errno 116] ETIMEDOUT
         # TODO: check if preallocating buf bytearray and zeroing out back half garbage with msg_size is faster
-        decode_iFacialMocap(buf, self.face_data)
+        # decode_iFacialMocap(buf, self.face_data)
+        decode_iFacialMocap_fast(buf, self.face_data)
         return self.face_data
 
     def __exit__(self, exc_type, exc_val, exc_tb):

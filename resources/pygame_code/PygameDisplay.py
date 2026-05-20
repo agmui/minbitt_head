@@ -55,7 +55,7 @@ class PygameDisplay(DisplayInterface):
             return HeadInput(True, FaceExpression.HUG_EYES)
         elif pygame.key.get_pressed()[K_f]:
             return HeadInput(True, FaceExpression.POG)
-        return HeadInput(True, FaceExpression.FIRE)#NA)
+        return HeadInput(True, FaceExpression.NA)
 
     def draw_line(self, color: color_t, start_pos: Point, end_pos: Point, width: int = 1):
         draw.line(self.head, color, tuple(start_pos * self.scale), tuple(end_pos * self.scale), width * self.scale)
@@ -174,8 +174,8 @@ class PygameDisplay(DisplayInterface):
 
         # print Blendshape values
         offset = self.WIDTH * self.scale + 100
-        for i, e in enumerate(sorted(face_data.__dict__)):
-            output_str = e + ": " + str(face_data.__dict__[e])
+        for i, e in enumerate(BlendshapeData.attr_list()): # this is jank
+            output_str = e + ": " + str(getattr(face_data, e))
             output_str_t = self.font.render(output_str, 1, WHITE << 8 | 255)  # TODO: idk kinda jank
             self.screen.blit(output_str_t, (4 + offset, i * 16))
 

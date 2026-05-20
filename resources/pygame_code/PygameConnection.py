@@ -1,6 +1,7 @@
 from socket import *
 
-from minbitt_pkg.iFacialMocap import ConnectionInterface, decode_iFacialMocap
+from minbitt_pkg.decode_iFacialMocap import decode_iFacialMocap_fast
+from minbitt_pkg.iFacialMocap import ConnectionInterface
 from minbitt_pkg.BlendshapeData import BlendshapeData
 
 class PygameConnection(ConnectionInterface):
@@ -26,7 +27,8 @@ class PygameConnection(ConnectionInterface):
 
     def get_data(self):
         messages, address = self.server.recvfrom(8192)
-        decode_iFacialMocap(messages, self.face_data)
+        # decode_iFacialMocap(messages, self.face_data)
+        decode_iFacialMocap_fast(messages, self.face_data)
         return self.face_data
 
     def __exit__(self, exc_type, exc_value, traceback):

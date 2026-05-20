@@ -148,11 +148,11 @@ class LedDisplayRaw(DisplayInterface):
         dt = new_time - self.old_time
         self.old_time = new_time
         if __debug__:
-            fps = f"FPS: {1 / dt}"
+            fps = f"FPS: {1 / dt:4.4f} | avg FPS:"
             # print(fps)
 
             self.avg[self.i] = 1 / dt
-            print(sum(self.avg) / 20)
+            print(fps,sum(self.avg) / 20)
             self.i += 1
             self.i %= 20
 

@@ -1,5 +1,6 @@
 from minbitt_pkg.EnvSettings import EnvSettings
 from minbitt_pkg.iFacialMocap import *
+# from minbitt_pkg.BlueToothConnection import BlueToothConnection
 from minbitt_pkg.BlendshapeData import BlendshapeData
 from minbitt_pkg.DisplayInterface import *
 
@@ -229,14 +230,14 @@ class MinBittAnimation(AnimationInterface):
             final_mouth_pos = lerp(self.mouth_pos, self.mouth_pos + (0, 4), t)
         mouth_dx = final_mouth_pos.x - self.mouth_pos.x
         # print(mouth_dx)
-        mouth_form = ((face_data.mouth_form() + 100) / 200.0) * self.mouth_tune
+        mouth_form = ((face_data.mouth_form + 100) / 200.0) * self.mouth_tune
         new_p0 = lerp(self.p0_frame1.x, self.p0_frame2.x, mouth_form - eyeWide * 0.005)
         new_p2 = lerp(self.p2_frame1.x, self.p2_frame2.x, mouth_form - eyeWide * 0.005)  # TODO: tune
         self.spline.p0 = Point(new_p0,
                                self.spline.p0.y)  # TODO: if needed make update() func in Point class avoiding reassign
         self.spline.p2 = Point(new_p2, self.spline.p2.y)  # TODO: sub mouth_dx
 
-        mouth_open = self.mouth_close_tune * face_data.mouth_open() / 10.0  # div by 10 to "keyframe" the important mouth speach range
+        mouth_open = self.mouth_close_tune * face_data.mouth_open / 10.0  # div by 10 to "keyframe" the important mouth speach range
         scale = sigmoid(0.7 * mouth_open - 2)
         new_p1 = lerp(self.p1_frame1.y, self.p1_frame2.y, scale)
         # bot of mouth LR
@@ -266,10 +267,11 @@ def main(env_settings: EnvSettings):
     WIDTH = d.get_width()
 
     # Note: display must be inited first
-    # with d as display, env_settings.connection as connection:
+    with d as display, env_settings.connection as connection:
+    # with d as display, MockConnection(proj_env + sample_data_dir + "data.txt") as connection:
     # with d as display, CachedConnection(proj_env+sample_data_dir+"data.txt") as connection:
-    with d as display, MockConnection(proj_env + sample_data_dir + "data.txt") as connection:
     # with d as display, DebugFaceConnection(proj_env+sample_data_dir+"data.txt", display) as connection:
+    # with d as display, BlueToothConnection() as connection:
 
         # minbitt_animation: AnimationInterface = AnimationTest(display, proj_env)
         minbitt_animation: AnimationInterface = MinBittAnimation(display, proj_env)
