@@ -14,6 +14,7 @@ from adafruit_ble.attributes import Attribute
 from adafruit_ble.uuid import VendorUUID
 from adafruit_ble.characteristics.stream import StreamIn, StreamOut
 
+
 start_msg = "iFacialMocap_sahuasouryya9218sauhuiayeta91555dy3719"
 NOTIFY_CHARACTERISTIC_UUID = "EFAB5678-1234-90AB-CDEF-1234567890AB"
 WRITE_CHARACTERISTIC_UUID = "ABCD1234-5678-90AB-CDEF-1234567890AB"
@@ -149,7 +150,9 @@ for advertisement in ble.start_scan(ProvideServicesAdvertisement, Advertisement)
     print(addr, advertisement)
     print("\t" + repr(advertisement))
     print()
-    if advertisement.complete_name == "iFacialMocap-iOS":
+    # if advertisement.complete_name == "iFacialMocap-iOS":
+    print(advertisement.get_prefix_bytes())
+    if advertisement.get_prefix_bytes() == b"\x01\x02\x01\x03\x01\x06\x01\x07":
         print("found")
         ifacial_ad = advertisement
         ble.stop_scan()
@@ -162,15 +165,25 @@ print("scan done")
 
 print("connecting")
 con = ble.connect(ifacial_ad)
+print("con", con)
+if con is None:
+    print("error: con is None")
+    exit(1)
 print("---")
 
 # con.pair()
 print("getting service")
-service: iFacialMocapService = con[iFacialMocapService]
+try:
+    service: iFacialMocapService | None = con[iFacialMocapService]
+except Exception as e:
+    print("err", e)
+    exit(1)
+print("=======")
 print(service.bleio_characteristics)
 service.write(bytearray(start_msg, 'utf-8'))
 import time
 while True:
-    n = service.readline()
-    print(n)
-    time.sleep(1)
+    data = service.read(512)
+    print(data)
+    decode_msg(data)
+    # time.sleep(0.16)
