@@ -48,6 +48,7 @@ class FaceExpression:  # (Enum):
     HUG_EYES = const(4)
     POG = const(5)
     FIRE = const(6)
+    SPIN = const(7)
 
 
 class HeadInput:
@@ -79,7 +80,7 @@ class DisplayInterface:
     def draw_line(self, color: color_t, start_pos: Point, end_pos: Point, width: int = 1):
         pass
 
-    def draw_circle(self, color: color_t, pos: Point, radius: int, fill: bool = False):
+    def draw_circle(self, color: color_t, pos: Point, radius: int):
         pass
 
     def blit(self, image, pos: Point):
@@ -91,12 +92,18 @@ class DisplayInterface:
     def draw_gif(self, gif, pos: Point):
         pass
 
+    def frame_buffer(self):# TODO: decide
+        pass
+
     def update(self, face_data: BlendshapeData = None):
         pass
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
 
+class AnimationInterface:
+    def animate_face(self, face_data: BlendshapeData, head_input: HeadInput) -> None:
+        pass
 
 def bresenham(pixel_buff, color: color_t, start_pos: tuple[int, int], end_pos: tuple[int, int], width: int = 1):
     """

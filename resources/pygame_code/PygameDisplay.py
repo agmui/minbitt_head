@@ -2,7 +2,6 @@ from minbitt_pkg.DisplayInterface import *
 from pygame import *
 import pygame.event
 
-
 class PygameDisplay(DisplayInterface):
     def __init__(self, WIDTH, HEIGHT, COLOR_KEY, FPS=60, scale=10, DEBUG_TEXT_WIDTH=575, DEBUG_TEXT_HEIGHT=600):
         self.WIDTH = WIDTH
@@ -20,7 +19,7 @@ class PygameDisplay(DisplayInterface):
     def __enter__(self):
         init()
         self.screen = display.set_mode(
-            (self.WIDTH * self.scale + self.DEBUG_TEXT_WIDTH, self.HEIGHT * self.scale + self.DEBUG_TEXT_HEIGHT))
+            (self.WIDTH * self.scale + self.DEBUG_TEXT_WIDTH, self.HEIGHT * self.scale + self.DEBUG_TEXT_HEIGHT), DOUBLEBUF)
         self.clock = time.Clock()
         self.font = font.SysFont("Arial", 14, bold=True)
         # self.font = font.SysFont("Calibri", 15, bold=True)
@@ -55,13 +54,17 @@ class PygameDisplay(DisplayInterface):
             return HeadInput(True, FaceExpression.HUG_EYES)
         elif pygame.key.get_pressed()[K_f]:
             return HeadInput(True, FaceExpression.POG)
+        elif pygame.key.get_pressed()[K_g]:
+            return HeadInput(True, FaceExpression.FIRE)
+        elif pygame.key.get_pressed()[K_z]:
+            return HeadInput(True, FaceExpression.SPIN)
         return HeadInput(True, FaceExpression.NA)
 
     def draw_line(self, color: color_t, start_pos: Point, end_pos: Point, width: int = 1):
         draw.line(self.head, color, tuple(start_pos * self.scale), tuple(end_pos * self.scale), width * self.scale)
         bresenham(self.pixel_buff, color, start_pos.trunc(), end_pos.trunc(), width)
 
-    def draw_circle(self, color: color_t, center: Point, radius: int, fill: bool = False):
+    def draw_circle(self, color: color_t, center: Point, radius: int):
         """
         Bresenham's circle algorithm: https://funloop.org/post/2021-03-15-bresenham-circle-drawing-algorithm.html
         :param color:
@@ -72,7 +75,7 @@ class PygameDisplay(DisplayInterface):
         """
         # assert pos.x - radius >= 0 and pos.y - radius >= 0
 
-        draw.circle(self.head, color, tuple(center * self.scale), (radius + 0.3) * self.scale, not fill)
+        draw.circle(self.head, color, tuple(center * self.scale), (radius + 0.3) * self.scale, 3)
 
         def draw_pixel(y: int, x: int):  # TODO: idk optimize for out of bound draw
             if self.WIDTH <= x or x < 0 or self.HEIGHT <= y or y < 0:
@@ -92,7 +95,7 @@ class PygameDisplay(DisplayInterface):
         d_ne = -(radius << 1) + 5
 
         def mirror_points(x: int, y: int):
-            if fill:
+            if fill:#TODO
                 bresenham(self.pixel_buff, color, (pos[0] - x, y), (pos[1] + x + 1, y), 1)
                 bresenham(self.pixel_buff, color, (pos[0] - x, -y), (pos[1] + x + 1, -y), 1)
                 bresenham(self.pixel_buff, color, (pos[0] - y + 1, x), (pos[1] + y, x), 1)
@@ -138,9 +141,9 @@ class PygameDisplay(DisplayInterface):
                 c = image.get_at((x, y))
                 if int(c) >> 8 == self.COLOR_KEY:
                     continue
-                if self.WIDTH <= x or x < 0 or self.HEIGHT <= y or y < 0:  # TODO: can be optimized out if needed
+                if self.WIDTH <= x+cord[1] or x+cord[1] < 0 or self.HEIGHT <= y+cord[1] or y+cord[1] < 0:
                     continue
-                self.pixel_buff[y + cord[1]][x + cord[0]] = c
+                self.pixel_buff[y + cord[1]][x + cord[0]] = c # TODO: make rgb565 filter
 
     def draw_text(self, output_str: str, pos: Point, color: color_t):
         # output_str_t = transform.scale_by(self.font.render(output_str, 0, color), self.scale)  # FIXME:
@@ -176,7 +179,7 @@ class PygameDisplay(DisplayInterface):
         offset = self.WIDTH * self.scale + 100
         for i, e in enumerate(BlendshapeData.attr_list()): # this is jank
             output_str = e + ": " + str(getattr(face_data, e))
-            output_str_t = self.font.render(output_str, 1, WHITE << 8 | 255)  # TODO: idk kinda jank
+            output_str_t = self.font.render(output_str, 1, WHITE << 8 | 255)  # 255 is for alpha
             self.screen.blit(output_str_t, (4 + offset, i * 16))
 
         # display fps

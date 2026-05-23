@@ -88,7 +88,7 @@ class iFacialMocapBTDecode:
         blend_shapes = self.decompress_json_data["blendShapes"]
         blend_shape_count = len(blend_shapes)
 
-        for i in range(blend_shape_count):  # TODO: do for range in len(data)
+        for i in range(blend_shape_count):
             if index >= len(data):
                 break
             encoded_value = data[index]
