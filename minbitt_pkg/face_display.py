@@ -10,19 +10,17 @@ def main(env_settings: EnvSettings):
     sample_data_dir = "minbitt_pkg/sample_data/"
     proj_env = env_settings.proj_env
     d = env_settings.display
+    minbitt_animation = env_settings.animation
     HEIGHT = d.get_height()
     WIDTH = d.get_width()
 
     # Note: display must be inited first
-    with d as display, env_settings.connection as connection:
-    # with d as display, MockConnection(proj_env + sample_data_dir + "data.txt") as connection:
+    # with d as display, env_settings.connection as connection:
+    with d as display, MockConnection(proj_env + sample_data_dir + "data.txt") as connection:
     # with d as display, CachedConnection(proj_env+sample_data_dir+"data.txt") as connection:
     # with d as display, DebugFaceConnection(proj_env+sample_data_dir+"data.txt", display) as connection:
     # with d as display, BlueToothConnection() as connection:
 
-        # minbitt_animation: AnimationInterface = AnimationTest(display, proj_env)
-        # minbitt_animation: AnimationInterface = MinBittAnimation(display, proj_env)
-        minbitt_animation: AnimationInterface = SansAnimation(display, proj_env)
         no_wifi_img = display.load_image(proj_env + "minbitt_pkg/" + "sprites/no_wifi.bmp")
         loading = 0
         running = True
@@ -32,8 +30,6 @@ def main(env_settings: EnvSettings):
                     head_input = display.read_input()
                     running = head_input.running
                     face_data = connection.get_data()
-                    # face_data = connection.get_data()
-                    # print(msg.decode('utf-8'))
 
                     minbitt_animation.animate_face(face_data, head_input)
                     display.update(face_data)

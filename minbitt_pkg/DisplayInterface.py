@@ -62,6 +62,9 @@ class DisplayInterface:
     def __enter__(self):
         pass
 
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
     def get_width(self) -> int:
         pass
 
@@ -98,8 +101,6 @@ class DisplayInterface:
     def update(self, face_data: BlendshapeData = None):
         pass
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
 
 class AnimationInterface:
     def animate_face(self, face_data: BlendshapeData, head_input: HeadInput) -> None:

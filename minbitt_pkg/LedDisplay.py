@@ -7,6 +7,9 @@ import rgbmatrix
 from adafruit_display_text import bitmap_label
 from adafruit_bitmap_font import bitmap_font
 import gifio
+import board # for i2c
+import busio # for i2c
+import traceback
 
 from minbitt_pkg.DisplayInterface import *
 
@@ -19,7 +22,7 @@ def rgb24_to_rgb16(color: int):
 
 
 class LedDisplay(DisplayInterface):
-    def __init__(self, matrix: rgbmatrix.RGBMatrix, COLOR_KEY, font_path, FPS=60):
+    def __init__(self, matrix: rgbmatrix.RGBMatrix, COLOR_KEY: color_t, font_path: str, FPS=60, controller_addr: int = -1):
         self.matrix = matrix
         self.WIDTH = matrix.width
         self.HEIGHT = matrix.height
@@ -31,12 +34,15 @@ class LedDisplay(DisplayInterface):
         self.old_time = time.monotonic()
         self.font = bitmap_font.load_font(font_path)
 
+        self.controller_addr = controller_addr
+        if self.controller_addr != -1:
+            self.i2c = busio.I2C(board.A1, board.A2) # make this a dependency
+
         if __debug__:
             self.avg = [0 for _ in range(20)]
             self.i = 0
 
-    def __enter__(self):
-        # Create a display
+        # === Create a display ===
         self.led_display = framebufferio.FramebufferDisplay(self.matrix, auto_refresh=False)
         group = displayio.Group()
         self.background_bitmap = displayio.Bitmap(self.WIDTH, self.HEIGHT, 0xFFFF)  # RGB565
@@ -49,7 +55,24 @@ class LedDisplay(DisplayInterface):
         group.append(self.background_tile_grid)
         self.led_display.root_group = group
 
+        if self.controller_addr != -1:
+            # init i2c
+            while not self.i2c.try_lock(): #TODO: check for stall
+                time.sleep(0)
+
+    def __enter__(self):
+        # Note: nothing is here because we need LedDisplay to be init before any animation or Connection Interface
+        # also to properly context manage LedDisplay and call __exit__ at the end
         return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.background_bitmap.deinit()
+        self.led_display.framebuffer.deinit()
+        # release olf display
+        displayio.release_displays()
+
+        if self.controller_addr != -1:
+            self.i2c.unlock()
 
     def get_width(self) -> int:
         return self.WIDTH
@@ -94,6 +117,25 @@ class LedDisplay(DisplayInterface):
         return odg, face
 
     def read_input(self) -> HeadInput:
+        if self.controller_addr != -1:
+            buff = bytearray(1)
+            try:
+                self.i2c.readfrom_into(self.controller_addr, buff)
+            except OSError as e:
+                #TODO: idk led red cuz controller is not connected
+                traceback.print_exception(e)
+            if buff[0] == 0:
+                return HeadInput(True, FaceExpression.NA)
+            elif buff[0] == 1:
+                return HeadInput(True, FaceExpression.QUESTION)
+            elif buff[0] == 2:
+                return HeadInput(True, FaceExpression.LOCK_IN)
+            elif buff[0] == 4:
+                return HeadInput(True, FaceExpression.HUG_EYES)
+            elif buff[0] == 8:
+                return HeadInput(True, FaceExpression.POG)
+            elif buff[0] == 16:
+                return HeadInput(True, FaceExpression.SPIN)
         return HeadInput(True, FaceExpression.NA)
 
     def draw_line(self, color: color_t, start_pos: Point, end_pos: Point, width: int = 1):
@@ -149,6 +191,11 @@ class LedDisplay(DisplayInterface):
         # met_deadline = self.led_display.refresh(target_frames_per_second=self.FPS)
         self.background_bitmap.fill(0)
 
+        for i in range(1, len(self.led_display.root_group)): # clearing gifs
+            if not self.led_display.root_group[i].hidden:
+                self.led_display.root_group[i].hidden = True
+
+
         frame_render_dt = time.monotonic() - self.old_time
         if self.desired_dt > frame_render_dt:
             time.sleep(self.desired_dt - frame_render_dt)
@@ -163,8 +210,3 @@ class LedDisplay(DisplayInterface):
             self.i %= 20
         self.old_time = post_sleep
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.background_bitmap.deinit()
-        self.led_display.framebuffer.deinit()
-        # release olf display
-        displayio.release_displays()

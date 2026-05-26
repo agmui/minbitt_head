@@ -144,7 +144,7 @@ class MinBittAnimation(AnimationInterface):
             r = int(lerp(self.min_r, self.max_r, (face_data.eyeWide_R - self.eyeWide_thresh) / (
                     self.eyeWide_thresh_upper - self.eyeWide_thresh)))
             self.display.draw_circle(MINBITT_BLUE, left_eye_xy + (3, 3), r)
-            self.display.draw_circle(MINBITT_BLUE, left_eye_xy + (3, 3), 0, True)
+            self.display.draw_circle(MINBITT_BLUE, left_eye_xy + (3, 3), 0)
 
         # == right eye ==
         right_eye_xy = self.right_eye_pos + (
@@ -161,7 +161,7 @@ class MinBittAnimation(AnimationInterface):
             r = int(lerp(self.min_r, self.max_r, (face_data.eyeWide_R - self.eyeWide_thresh) / (
                     self.eyeWide_thresh_upper - self.eyeWide_thresh)))
             self.display.draw_circle(MINBITT_BLUE, right_eye_xy + (3, 3), r)
-            self.display.draw_circle(MINBITT_BLUE, right_eye_xy + (3, 3), 0, True)
+            self.display.draw_circle(MINBITT_BLUE, right_eye_xy + (3, 3), 0)
 
         # == mouth ==
         final_mouth_pos = self.mouth_pos  # move mouth down if eyeWide animation

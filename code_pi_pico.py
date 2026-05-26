@@ -6,7 +6,6 @@ from micropython import const
 from minbitt_pkg.DisplayInterface import PINK
 from minbitt_pkg.EnvSettings import EnvSettings
 from minbitt_pkg.LedDisplay import LedDisplay
-from minbitt_pkg.LedDisplayRaw import LedDisplayRaw
 from minbitt_pkg.face_display import main
 from minbitt_pkg.CircuitPythonConnection import CircuitPythonConnection
 
@@ -53,7 +52,6 @@ matrix = rgbmatrix.RGBMatrix(
     doublebuffer=True,
 )
 
-# display = LedDisplayRaw(matrix, COLOR_KEY, font_path, FPS)
 display = LedDisplay(matrix, COLOR_KEY, font_path, FPS)
 settings = EnvSettings(proj_env, display, CircuitPythonConnection(display))
 

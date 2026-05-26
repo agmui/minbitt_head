@@ -25,6 +25,9 @@ class PygameDisplay(DisplayInterface):
         # self.font = font.SysFont("Calibri", 15, bold=True)
         return self
 
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        quit()
+
     def get_width(self) -> int:
         return self.WIDTH
 
@@ -194,6 +197,3 @@ class PygameDisplay(DisplayInterface):
         for y in range(self.HEIGHT):
             for x in range(self.WIDTH):
                 self.pixel_buff[y][x] = BLACK
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        quit()
