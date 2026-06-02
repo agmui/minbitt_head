@@ -16,13 +16,15 @@ class PygameDisplay(DisplayInterface):
         # self.head: Surface = surface.Surface((WIDTH,HEIGHT))
         self.head: Surface = surface.Surface((WIDTH * self.scale, HEIGHT * self.scale))
 
-    def __enter__(self):
+        # == init display ==
         init()
         self.screen = display.set_mode(
             (self.WIDTH * self.scale + self.DEBUG_TEXT_WIDTH, self.HEIGHT * self.scale + self.DEBUG_TEXT_HEIGHT), DOUBLEBUF)
         self.clock = time.Clock()
         self.font = font.SysFont("Arial", 14, bold=True)
         # self.font = font.SysFont("Calibri", 15, bold=True)
+
+    def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -43,6 +45,9 @@ class PygameDisplay(DisplayInterface):
 
     def load_gif(self, gif_path: str):
         return pygame.image.load(gif_path).convert_alpha()
+
+    def load_audio(self, audio_file: str):
+        return mixer.Sound(audio_file)
 
     def read_input(self) -> HeadInput:
         for event in pygame.event.get():
@@ -98,7 +103,7 @@ class PygameDisplay(DisplayInterface):
         d_ne = -(radius << 1) + 5
 
         def mirror_points(x: int, y: int):
-            if fill:#TODO
+            if False:#fill:#TODO
                 bresenham(self.pixel_buff, color, (pos[0] - x, y), (pos[1] + x + 1, y), 1)
                 bresenham(self.pixel_buff, color, (pos[0] - x, -y), (pos[1] + x + 1, -y), 1)
                 bresenham(self.pixel_buff, color, (pos[0] - y + 1, x), (pos[1] + y, x), 1)
@@ -159,6 +164,10 @@ class PygameDisplay(DisplayInterface):
 
     def draw_gif(self, gif, pos: Point):
         self.head.blit(transform.scale_by(gif, self.scale), tuple(pos * self.scale))
+
+    def play_audio(self, audio):
+        if not mixer.get_busy():
+            audio.play()
 
     def update(self, face_data: BlendshapeData = BlendshapeData()):
         self.screen.fill(GREY)

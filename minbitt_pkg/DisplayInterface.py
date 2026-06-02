@@ -77,6 +77,9 @@ class DisplayInterface:
     def load_gif(self, gif_path: str):
         pass
 
+    def load_audio(self, audio_file: str):
+        pass
+
     def read_input(self) -> HeadInput:
         pass
 
@@ -96,6 +99,9 @@ class DisplayInterface:
         pass
 
     def frame_buffer(self):# TODO: decide
+        pass
+
+    def play_audio(self, audio):
         pass
 
     def update(self, face_data: BlendshapeData = None):

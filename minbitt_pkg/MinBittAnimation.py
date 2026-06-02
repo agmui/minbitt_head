@@ -17,28 +17,35 @@ class MinBittAnimation(AnimationInterface):
             "sprites/eye/eye3.bmp",
             "sprites/eye/eye4.bmp",
         ]
-        sprite_dir = "minbitt_pkg/"
-        self.L_eye = [display.load_image(proj_env + sprite_dir + i) for i in eye_sprites]
-        self.R_eye = [display.load_image(proj_env + sprite_dir + i, True) for i in eye_sprites]
-        self.L_X3_eye = display.load_image(proj_env + sprite_dir + "sprites/eye/X3_eye.bmp")
-        self.R_X3_eye = display.load_image(proj_env + sprite_dir + "sprites/eye/X3_eye.bmp", True)
+        project_dir = "minbitt_pkg/"
+        self.L_eye = [display.load_image(proj_env + project_dir + i) for i in eye_sprites]
+        self.R_eye = [display.load_image(proj_env + project_dir + i, True) for i in eye_sprites]
+        self.L_X3_eye = display.load_image(proj_env + project_dir + "sprites/eye/X3_eye.bmp")
+        self.R_X3_eye = display.load_image(proj_env + project_dir + "sprites/eye/X3_eye.bmp", True)
         # self.sus_squint = display.load_image(proj_env+sprite_dir+"sprites/eye/sus_squint.bmp")
         # TODO: make sus_squint with bezier curves/generalize with wide eye animation
 
         # mouth
-        self.mouth_top = display.load_image(proj_env + sprite_dir + "sprites/mouth_pixelated_w.bmp")
+        self.mouth_top = display.load_image(proj_env + project_dir + "sprites/mouth_pixelated_w.bmp")
         mouth_sprites = [
             "sprites/mouth/mouth1.bmp",
             "sprites/mouth/mouth2.bmp",
             "sprites/mouth/mouth3.bmp",
             "sprites/mouth/mouth4.bmp",
         ]
-        self.mouth_top_small = display.load_image(proj_env + sprite_dir + mouth_sprites[0])
-        self.blush = display.load_image(proj_env + sprite_dir + "sprites/blush.bmp")
+        self.mouth_top_small = display.load_image(proj_env + project_dir + mouth_sprites[0])
+        self.blush = display.load_image(proj_env + project_dir + "sprites/blush.bmp")
+
+        audio_files = [
+            "sprites/faaah_16kHz_128k.mp3"
+            # "faaah.mp3",
+            # "rick_roll.mp3",
+        ]
+        self.sound_clips = [display.load_audio(proj_env + project_dir + i) for i in audio_files]
 
         # expressions
-        self.question_expr = display.load_image(proj_env + sprite_dir + "sprites/expressions/question_expr.bmp")
-        self.pog_expr = display.load_image(proj_env + sprite_dir + "sprites/expressions/pog.bmp")
+        self.question_expr = display.load_image(proj_env + project_dir + "sprites/expressions/question_expr.bmp")
+        self.pog_expr = display.load_image(proj_env + project_dir + "sprites/expressions/pog.bmp")
         # add keyframes system
 
         eye_spacing = 40
@@ -74,8 +81,8 @@ class MinBittAnimation(AnimationInterface):
         self.tv_glitch_line = 0
         self.tv_glitch_animation = False
         self.prev_input = FaceExpression.NA
-        self.fire_gif = self.display.load_gif(proj_env + sprite_dir + "sprites/fire.gif")
-        self.spinbitt_gif = self.display.load_gif(proj_env + sprite_dir + "sprites/spinbitt.gif")
+        self.fire_gif = self.display.load_gif(proj_env + project_dir + "sprites/fire.gif")
+        self.spinbitt_gif = self.display.load_gif(proj_env + project_dir + "sprites/spinbitt.gif")
 
 
     def animate_face(self, face_data: BlendshapeData, head_input: HeadInput) -> None:
@@ -98,6 +105,7 @@ class MinBittAnimation(AnimationInterface):
             self.display.draw_text("LOCK IN", Point(5, self.HEIGHT // 2 - 4), MINBITT_BLUE)
             return
         elif head_input.face_expr == FaceExpression.POG:
+            self.display.play_audio(self.sound_clips[0])
             self.display.blit(self.pog_expr, Point(0, 0))
             return
         elif head_input.face_expr == FaceExpression.FIRE:
