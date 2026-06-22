@@ -14,38 +14,46 @@ def main(env_settings: EnvSettings):
     HEIGHT = d.get_height()
     WIDTH = d.get_width()
 
-    # Note: display must be inited first
-    # with d as display, env_settings.connection as connection:
-    with d as display, MockConnection(proj_env + sample_data_dir + "data.txt") as connection:
-    # with d as display, CachedConnection(proj_env+sample_data_dir+"data.txt") as connection:
-    # with d as display, DebugFaceConnection(proj_env+sample_data_dir+"data.txt", display) as connection:
-    # with d as display, BlueToothConnection() as connection:
+    try:
+        # Note: display must be inited first
+        # with d as display, env_settings.connection as connection:
+        with d as display, MockConnection(proj_env + sample_data_dir + "data.txt") as connection:
+        # with d as display, CachedConnection(proj_env+sample_data_dir+"data.txt") as connection:
+        # with d as display, DebugFaceConnection(proj_env+sample_data_dir+"data.txt", display) as connection:
+        # with d as display, BlueToothConnection() as connection:
 
-        no_wifi_img = display.load_image(proj_env + "minbitt_pkg/" + "sprites/no_wifi.bmp")
-        loading = 0
-        running = True
-        while running:
-            try:
-                while running:
-                    head_input = display.read_input()
-                    running = head_input.running
-                    face_data = connection.get_data()
+            no_wifi_img = display.load_image(proj_env + "minbitt_pkg/" + "sprites/no_wifi.bmp")
+            loading = 0
+            running = True
+            while running:
+                try:
+                    display.status_led(GREEN)
+                    while running:
+                        head_input = display.read_input()
+                        running = head_input.running
+                        face_data = connection.get_data()
 
-                    minbitt_animation.animate_face(face_data, head_input)
-                    display.update(face_data)
+                        minbitt_animation.animate_face(face_data, head_input)
+                        display.update(face_data)
 
-            except (TimeoutError, OSError):
-                # TODO: maybe have cute tv glitch effect(burst.png burst2.png) here instead of no wifi logo
-                # or put cute tv glitch effect on first turn on of head
-                display.blit(no_wifi_img, Point(0, 0))
-                if loading >= 10:
-                    display.draw_line(MINBITT_BLUE, Point(4, HEIGHT // 2), Point(5, HEIGHT // 2))
-                if loading >= 20:
-                    display.draw_line(MINBITT_BLUE, Point(8, HEIGHT // 2), Point(9, HEIGHT // 2))
-                if loading >= 30:
-                    display.draw_line(MINBITT_BLUE, Point(12, HEIGHT // 2), Point(13, HEIGHT // 2))
-                loading += 1
-                loading %= 40
-                print("waiting for frames")
-                display.update()
-    # TODO: handel Network is unreachable if ip cant be found
+                except (TimeoutError, OSError) as e:
+                    # TODO: maybe have cute tv glitch effect(burst.png burst2.png) here instead of no wifi logo
+                    # or put cute tv glitch effect on first turn on of head
+                    display.status_led(YELLOW)
+                    display.blit(no_wifi_img, Point(0, 0))
+                    if loading >= 10:
+                        display.draw_line(MINBITT_BLUE, Point(4, HEIGHT // 2), Point(5, HEIGHT // 2))
+                    if loading >= 20:
+                        display.draw_line(MINBITT_BLUE, Point(8, HEIGHT // 2), Point(9, HEIGHT // 2))
+                    if loading >= 30:
+                        display.draw_line(MINBITT_BLUE, Point(12, HEIGHT // 2), Point(13, HEIGHT // 2))
+                    loading += 1
+                    loading %= 40
+                    print("waiting for frames")
+                    display.update()
+        # TODO: handel Network is unreachable if ip cant be found
+    except Exception as e:
+        import traceback
+        print("\n======= exception occurred ========\n")
+        traceback.print_exception(e)
+        display.status_led(RED)

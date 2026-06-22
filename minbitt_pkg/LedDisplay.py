@@ -1,5 +1,6 @@
 import time
 import audiocore
+import digitalio
 import displayio  # Main display library
 import framebufferio  # For showing things on the display
 import adafruit_imageload
@@ -12,7 +13,7 @@ import board # for i2c
 import busio # for i2c
 import audiobusio
 import audiomp3
-import traceback
+import neopixel_write
 
 from minbitt_pkg.DisplayInterface import *
 
@@ -22,6 +23,7 @@ def rgb24_to_rgb16(color: int):
     g6 = (color >> 10) & 0x3f
     b5 = (color >> 3) & 0x1f
     return r5 << 11 | g6 << 5 | b5
+
 
 class LedDisplay(DisplayInterface):
     def __init__(self, matrix: rgbmatrix.RGBMatrix, COLOR_KEY: color_t, font_path: str, FPS=60, use_controller: bool = False, speaker: audiobusio.I2SOut | None = None):
@@ -39,8 +41,16 @@ class LedDisplay(DisplayInterface):
         self.use_controller = use_controller
         if self.use_controller:
             self.uart = busio.UART(board.TX, board.A0, baudrate=115200, parity=busio.UART.Parity.EVEN, stop=2, receiver_buffer_size=1)
+        self.prev_controller_input = HeadInput(True, FaceExpression.NA)
 
         self.speaker = speaker
+
+        # led
+        self.led_timer = 0
+        self.led = digitalio.DigitalInOut(board.LED)
+        self.led.direction = digitalio.Direction.OUTPUT
+        self.neopixel = digitalio.DigitalInOut(board.NEOPIXEL)
+        self.neopixel.direction = digitalio.Direction.OUTPUT
 
         if __debug__:
             self.avg = [0 for _ in range(20)]
@@ -81,6 +91,23 @@ class LedDisplay(DisplayInterface):
     def get_height(self) -> int:
         return self.HEIGHT
 
+    def draw_line(self, color: color_t, start_pos: Point, end_pos: Point, width: int = 1):
+        """
+        Note:
+            draw_line is not affected by key color
+        """
+        # using rgb24_to_rgb16 instead of self.cc so we can draw lines with COLOR_KEY
+        bitmaptools.draw_line(self.background_bitmap, int(start_pos.x), int(start_pos.y), int(end_pos.x),
+                              int(end_pos.y), rgb24_to_rgb16(color))
+
+    def draw_circle(self, color: color_t, pos: Point, radius: int):
+        """
+        Note:
+            draw_circle is not affected by key color
+        """
+        # using rgb24_to_rgb16 instead of self.cc so we can draw lines with COLOR_KEY
+        bitmaptools.draw_circle(self.background_bitmap, int(pos.x), int(pos.y), max(radius, 0), rgb24_to_rgb16(color))
+
     def load_image(self, image_path, flipped=False):
         bitmap, img_palette = adafruit_imageload.load(image_path, bitmap=displayio.Bitmap, palette=displayio.Palette)
         print(image_path, img_palette)
@@ -103,71 +130,6 @@ class LedDisplay(DisplayInterface):
         # bitmap.deinit()
         return tmp_bitmap
 
-    def load_gif(self, gif_path: str) -> tuple[gifio.OnDiskGif, displayio.TileGrid]:
-        odg = gifio.OnDiskGif(gif_path)
-        print(gif_path, odg.palette, odg.frame_count)
-        odg.next_frame()
-        face = displayio.TileGrid(
-            odg.bitmap,
-            pixel_shader=displayio.ColorConverter(
-                input_colorspace=displayio.Colorspace.RGB565_SWAPPED
-            ),
-        )
-        self.led_display.root_group.append(face)
-        face.hidden = True
-        return odg, face
-
-    def load_audio(self, file_path: str):
-        #TODO: maybe write check to make sure audio file is within spec?
-        file_ending = file_path[-3:]
-        with open(file_path, "rb") as file:
-            if file_ending == "wav":
-                wav = audiocore.WaveFile(file)
-                print(f'{file_path}: samplerate {wav.sample_rate}, bits per sample {wav.bits_per_sample}')
-                return wav
-            elif file_ending == "mp3":
-                mp3 = audiomp3.MP3Decoder(file)
-                print(f'{file_path}: samplerate {mp3.sample_rate} bits per sample {mp3.bits_per_sample}')
-                return mp3
-            else:
-                raise Exception(f"unsupported filetype: {file_ending}")
-
-    def read_input(self) -> HeadInput:
-        if self.use_controller:
-            data = self.uart.read(self.uart.in_waiting)
-            if data == None:
-                return HeadInput(True, FaceExpression.NA)
-            elif data == 0:
-                return HeadInput(True, FaceExpression.NA)
-            elif data == 1:
-                return HeadInput(True, FaceExpression.QUESTION)
-            elif data == 2:
-                return HeadInput(True, FaceExpression.LOCK_IN)
-            elif data == 4:
-                return HeadInput(True, FaceExpression.HUG_EYES)
-            elif data == 8:
-                return HeadInput(True, FaceExpression.POG)
-            elif data == 16:
-                return HeadInput(True, FaceExpression.SPIN)
-        return HeadInput(True, FaceExpression.NA)
-
-    def draw_line(self, color: color_t, start_pos: Point, end_pos: Point, width: int = 1):
-        """
-        Note:
-            draw_line is not affected by key color
-        """
-        # using rgb24_to_rgb16 instead of self.cc so we can draw lines with COLOR_KEY
-        bitmaptools.draw_line(self.background_bitmap, int(start_pos.x), int(start_pos.y), int(end_pos.x),
-                              int(end_pos.y), rgb24_to_rgb16(color))
-
-    def draw_circle(self, color: color_t, pos: Point, radius: int):
-        """
-        Note:
-            draw_circle is not affected by key color
-        """
-        # using rgb24_to_rgb16 instead of self.cc so we can draw lines with COLOR_KEY
-        bitmaptools.draw_circle(self.background_bitmap, int(pos.x), int(pos.y), radius, rgb24_to_rgb16(color))
-
     def blit(self, image, pos: Point):
         bitmaptools.blit(self.background_bitmap, image, clamp(int(pos.x), 0, 64), int(pos.y),
                          skip_source_index=self.COLOR_KEY)
@@ -185,7 +147,21 @@ class LedDisplay(DisplayInterface):
         bitmaptools.blit(self.background_bitmap, tmp_bitmap, int(pos.x), int(pos.y),
                          skip_source_index=0)
 
-    def draw_gif(self, gif: tuple[gifio.OnDiskGif, displayio.TileGrid], pos: Point):
+    def load_gif(self, gif_path: str) -> tuple[gifio.OnDiskGif, displayio.TileGrid]:
+        odg = gifio.OnDiskGif(gif_path)
+        print(gif_path, odg.palette, odg.frame_count)
+        odg.next_frame()
+        face = displayio.TileGrid(
+            odg.bitmap,
+            pixel_shader=displayio.ColorConverter(
+                input_colorspace=displayio.Colorspace.RGB565_SWAPPED
+            ),
+        )
+        self.led_display.root_group.append(face)
+        face.hidden = True
+        return odg, face
+
+    def draw_gif(self, gif: tuple[gifio.OnDiskGif, displayio.TileGrid], pos: Point = Point(0, 0)):
         odg, face = gif
         odg.bitmap.fill(0)
         face.hidden = False
@@ -199,19 +175,68 @@ class LedDisplay(DisplayInterface):
         odg = None
         # gc.collect()
 
+    def load_audio(self, file_path: str):
+        # TODO: maybe write check to make sure audio file is within spec?
+        file_ending = file_path[-3:]
+        if file_ending == "wav":
+            wav = audiocore.WaveFile(file_path)
+            print(f'{file_path}: samplerate {wav.sample_rate}, bits per sample {wav.bits_per_sample}')
+            return wav
+        elif file_ending == "mp3":
+            mp3 = audiomp3.MP3Decoder(file_path)
+            print(f'{file_path}: samplerate {mp3.sample_rate} bits per sample {mp3.bits_per_sample}')
+            return mp3
+        else:
+            raise Exception(f"unsupported filetype: {file_ending}")
+
     def play_audio(self, audio: audiocore.WaveFile | audiomp3.MP3Decoder):
         if not self.speaker.playing:
             self.speaker.play(audio, loop=False)
+
+    def read_input(self) -> HeadInput:
+        if self.use_controller:
+            raw_data = self.uart.read(self.uart.in_waiting)
+            if raw_data == b'' or raw_data is None:
+                return self.prev_controller_input
+            data = raw_data[0]
+            if data == 0:
+                if self.speaker.playing:
+                    self.speaker.pause()
+                    self.speaker.stop()
+                self.prev_controller_input = HeadInput(True, FaceExpression.NA)
+            elif data == 1:
+                self.prev_controller_input = HeadInput(True, FaceExpression.QUESTION)
+            elif data == 2:
+                self.prev_controller_input = HeadInput(True, FaceExpression.LOCK_IN)
+            elif data == 4:
+                self.prev_controller_input = HeadInput(True, FaceExpression.HUG_EYES)
+            elif data == 8:
+                self.prev_controller_input = HeadInput(True, FaceExpression.POG)
+            elif data == 16:
+                self.prev_controller_input = HeadInput(True, FaceExpression.SPIN)
+            return self.prev_controller_input
+        return HeadInput(True, FaceExpression.NA)
+
+    def status_led(self, color: color_t):
+        c = color.to_bytes(3, 'little')
+        neopixel_write.neopixel_write(self.neopixel, bytearray([c[1] >> 3, c[0] >> 3, c[2] >> 3]))
+        self.led.value = color == GREEN
+
 
     def update(self, face_data: BlendshapeData = None):
         self.led_display.refresh()
         # met_deadline = self.led_display.refresh(target_frames_per_second=self.FPS)
         self.background_bitmap.fill(0)
 
-        for i in range(1, len(self.led_display.root_group)): # clearing gifs
+        #TODO: idk figure out if you can just put a big if statement here
+        for i in range(1, len(self.led_display.root_group)):  # clearing gifs
             if not self.led_display.root_group[i].hidden:
                 self.led_display.root_group[i].hidden = True
 
+        self.led_timer += 1
+        self.led_timer %= 20
+        if self.led_timer == 0:
+            self.led.value = not self.led.value
 
         frame_render_dt = time.monotonic() - self.old_time
         if self.desired_dt > frame_render_dt:
@@ -222,8 +247,7 @@ class LedDisplay(DisplayInterface):
         if __debug__:
             fps = f"FPS: {1 / dt:4.4f} | avg FPS:"
             self.avg[self.i] = 1 / dt
-            print(fps, sum(self.avg) / 20)
+            # print(fps, sum(self.avg) / 20)
             self.i += 1
             self.i %= 20
         self.old_time = post_sleep
-

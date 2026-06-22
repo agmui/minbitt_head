@@ -36,38 +36,6 @@ class PygameDisplay(DisplayInterface):
     def get_height(self) -> int:
         return self.HEIGHT
 
-    def load_image(self, image_path: str, flipped=False) -> Surface:
-        img = image.load(image_path)
-        if flipped:
-            img = transform.flip(img, True, False)
-        img.set_colorkey(Color(self.COLOR_KEY << 8 | 255))
-        return img
-
-    def load_gif(self, gif_path: str):
-        return pygame.image.load(gif_path).convert_alpha()
-
-    def load_audio(self, audio_file: str):
-        return mixer.Sound(audio_file)
-
-    def read_input(self) -> HeadInput:
-        for event in pygame.event.get():
-            if event.type == QUIT or (
-                    event.type == KEYDOWN and (event.key == K_ESCAPE or event.key == K_q)):
-                return HeadInput(False, FaceExpression.NA)
-        if pygame.key.get_pressed()[K_a]:
-            return HeadInput(True, FaceExpression.QUESTION)
-        elif pygame.key.get_pressed()[K_s]:
-            return HeadInput(True, FaceExpression.LOCK_IN)
-        elif pygame.key.get_pressed()[K_d]:
-            return HeadInput(True, FaceExpression.HUG_EYES)
-        elif pygame.key.get_pressed()[K_f]:
-            return HeadInput(True, FaceExpression.POG)
-        elif pygame.key.get_pressed()[K_g]:
-            return HeadInput(True, FaceExpression.FIRE)
-        elif pygame.key.get_pressed()[K_z]:
-            return HeadInput(True, FaceExpression.SPIN)
-        return HeadInput(True, FaceExpression.NA)
-
     def draw_line(self, color: color_t, start_pos: Point, end_pos: Point, width: int = 1):
         draw.line(self.head, color, tuple(start_pos * self.scale), tuple(end_pos * self.scale), width * self.scale)
         bresenham(self.pixel_buff, color, start_pos.trunc(), end_pos.trunc(), width)
@@ -139,6 +107,13 @@ class PygameDisplay(DisplayInterface):
             x += 1
             mirror_points(x, y)
 
+    def load_image(self, image_path: str, flipped=False) -> Surface:
+        img = image.load(image_path)
+        if flipped:
+            img = transform.flip(img, True, False)
+        img.set_colorkey(Color(self.COLOR_KEY << 8 | 255))
+        return img
+
     def blit(self, image: Surface, pos: Point):
         self.head.blit(transform.scale_by(image, self.scale), tuple(pos * self.scale))
         # TODO: idk decide out of pixel_buff bounds asserts
@@ -162,12 +137,40 @@ class PygameDisplay(DisplayInterface):
                 sample_cord = (x * self.scale + 5, y * self.scale + 5)
                 self.pixel_buff[y + pos.y][x + pos.x] = output_str_t.get_at(sample_cord)[:3]
 
+    def load_gif(self, gif_path: str):
+        return pygame.image.load(gif_path).convert_alpha()
+
     def draw_gif(self, gif, pos: Point):
         self.head.blit(transform.scale_by(gif, self.scale), tuple(pos * self.scale))
+
+    def load_audio(self, audio_file: str):
+        return mixer.Sound(audio_file)
 
     def play_audio(self, audio):
         if not mixer.get_busy():
             audio.play()
+
+    def read_input(self) -> HeadInput:
+        for event in pygame.event.get():
+            if event.type == QUIT or (
+                    event.type == KEYDOWN and (event.key == K_ESCAPE or event.key == K_q)):
+                return HeadInput(False, FaceExpression.NA)
+        if pygame.key.get_pressed()[K_a]:
+            return HeadInput(True, FaceExpression.QUESTION)
+        elif pygame.key.get_pressed()[K_s]:
+            return HeadInput(True, FaceExpression.LOCK_IN)
+        elif pygame.key.get_pressed()[K_d]:
+            return HeadInput(True, FaceExpression.HUG_EYES)
+        elif pygame.key.get_pressed()[K_f]:
+            return HeadInput(True, FaceExpression.POG)
+        elif pygame.key.get_pressed()[K_g]:
+            return HeadInput(True, FaceExpression.FIRE)
+        elif pygame.key.get_pressed()[K_z]:
+            return HeadInput(True, FaceExpression.SPIN)
+        return HeadInput(True, FaceExpression.NA)
+
+    def status_led(self, color: color_t):
+        assert False # TODO:
 
     def update(self, face_data: BlendshapeData = BlendshapeData()):
         self.screen.fill(GREY)

@@ -84,18 +84,22 @@ class MinBittAnimation(AnimationInterface):
         self.fire_gif = self.display.load_gif(proj_env + project_dir + "sprites/fire.gif")
         self.spinbitt_gif = self.display.load_gif(proj_env + project_dir + "sprites/spinbitt.gif")
 
-
     def animate_face(self, face_data: BlendshapeData, head_input: HeadInput) -> None:
+        # edge led lighting
+        self.display.draw_line(PINK,Point(0,0), Point(0,self.HEIGHT))# TODO: idk make these cycle rainbow or something
+        self.display.draw_line(PINK,Point(self.WIDTH-1,0), Point(self.WIDTH-1,self.HEIGHT-1))
+
         if self.prev_input != head_input.face_expr:
             self.prev_input = head_input.face_expr
             self.tv_glitch_animation = True
-        if self.tv_glitch_animation and self.tv_glitch_line < self.HEIGHT:
-            self.display.draw_line(MINBITT_BLUE, Point(0, self.tv_glitch_line), Point(self.WIDTH, self.tv_glitch_line))
-            self.tv_glitch_line += 7
-            return
-        else:
-            self.tv_glitch_line = 0
-            self.tv_glitch_animation = False
+        if self.tv_glitch_animation:
+            if self.tv_glitch_line < self.HEIGHT:
+                self.display.draw_line(MINBITT_BLUE, Point(0, self.tv_glitch_line), Point(self.WIDTH, self.tv_glitch_line))
+                self.tv_glitch_line += 7
+                return
+            else:
+                self.tv_glitch_line = 0
+                self.tv_glitch_animation = False
 
         # == face expressions ==
         if head_input.face_expr == FaceExpression.QUESTION:
@@ -105,7 +109,7 @@ class MinBittAnimation(AnimationInterface):
             self.display.draw_text("LOCK IN", Point(5, self.HEIGHT // 2 - 4), MINBITT_BLUE)
             return
         elif head_input.face_expr == FaceExpression.POG:
-            self.display.play_audio(self.sound_clips[0])
+            self.display.play_audio(self.sound_clips[0]) #TODO: fix audio start point bug by preloading the audio during tv_glitch_animation
             self.display.blit(self.pog_expr, Point(0, 0))
             return
         elif head_input.face_expr == FaceExpression.FIRE:
@@ -149,7 +153,7 @@ class MinBittAnimation(AnimationInterface):
                 self.display.blit(self.L_eye[eye_index],
                                   left_eye_xy + (-3, -1))  # TODO: check math on offset of X3 face
         else:
-            r = int(lerp(self.min_r, self.max_r, (face_data.eyeWide_R - self.eyeWide_thresh) / (
+            r = int(lerp(self.min_r, self.max_r, (face_data.eyeWide_L - self.eyeWide_thresh) / (
                     self.eyeWide_thresh_upper - self.eyeWide_thresh)))
             self.display.draw_circle(MINBITT_BLUE, left_eye_xy + (3, 3), r)
             self.display.draw_circle(MINBITT_BLUE, left_eye_xy + (3, 3), 0)
@@ -207,3 +211,10 @@ class MinBittAnimation(AnimationInterface):
         self.display.blit(self.blush, final_mouth_pos + (33, 8))
         self.display.blit(self.blush, final_mouth_pos + (-19, 8))
 
+
+    """
+    TODO: maybe to prevent this have an abstract class extend Animation Interface that has already written the deinit
+    func, then also have it write load_img, load_gif ... and store all ref internally. Then it can free all that itself
+    """
+    # def deinit(self): # TODO: free all assets
+    #     self.display.free_gif(self.spinbitt_gif)

@@ -7,6 +7,7 @@ color_t = int
 RED = const(0xff0000)  # (255, 0, 0))
 GREEN = const(0x00ff00)  # (0, 255, 0))
 BLUE = const(0x0000ff)  # (0, 0, 255))
+YELLOW = const(0xffff00)  # (255, 255, 0))
 MINBITT_BLUE = const(0x5FCDE4)  # (0x5F, 0xCD, 0xE4)
 MINBITT_LIGHTBLUE = const(0x88EBFF)
 BLACK = const(0)  # (0, 0, 0)
@@ -71,22 +72,13 @@ class DisplayInterface:
     def get_height(self) -> int:
         pass
 
-    def load_image(self, image_path, flipped=False):  # -> GenericImage:
-        pass
-
-    def load_gif(self, gif_path: str):
-        pass
-
-    def load_audio(self, audio_file: str):
-        pass
-
-    def read_input(self) -> HeadInput:
-        pass
-
     def draw_line(self, color: color_t, start_pos: Point, end_pos: Point, width: int = 1):
         pass
 
     def draw_circle(self, color: color_t, pos: Point, radius: int):
+        pass
+
+    def load_image(self, image_path, flipped=False):  # -> GenericImage:
         pass
 
     def blit(self, image, pos: Point):
@@ -95,13 +87,25 @@ class DisplayInterface:
     def draw_text(self, output_str: str, pos: Point, color: color_t):
         pass
 
+    def load_gif(self, gif_path: str):
+        pass
+
     def draw_gif(self, gif, pos: Point):
         pass
 
-    def frame_buffer(self):# TODO: decide
+    def load_audio(self, audio_file: str):
         pass
 
     def play_audio(self, audio):
+        pass
+
+    def read_input(self) -> HeadInput:
+        pass
+
+    def status_led(self, color: color_t):
+        pass
+
+    def frame_buffer(self):# TODO: decide
         pass
 
     def update(self, face_data: BlendshapeData = None):
