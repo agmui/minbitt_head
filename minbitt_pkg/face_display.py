@@ -22,7 +22,7 @@ def main(env_settings: EnvSettings):
         # with d as display, DebugFaceConnection(proj_env+sample_data_dir+"data.txt", display) as connection:
         # with d as display, BlueToothConnection() as connection:
 
-            no_wifi_img = display.load_image(proj_env + "minbitt_pkg/" + "sprites/no_wifi.bmp")
+            no_wifi_img = display.load_image(proj_env + "minbitt_pkg/" + "assets/no_wifi.bmp")
             loading = 0
             running = True
             while running:

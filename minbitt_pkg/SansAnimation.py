@@ -7,7 +7,7 @@ class SansAnimation(AnimationInterface):
     def __init__(self, display: DisplayInterface, proj_env: str):
 
         self.display = display
-        sprite_dir = "minbitt_pkg/sprites/sans_heads/"
+        sprite_dir = "minbitt_pkg/assets/sans_heads/"
 
         head_width = 32
         head_height = 30
