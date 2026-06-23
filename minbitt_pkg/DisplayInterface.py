@@ -15,6 +15,10 @@ WHITE = const(0xFFFFFF)  # (255, 255, 255)
 GREY = const(0x6e6e6e)  # (110, 110, 110)
 PINK = const(0xFF00FF)  # (255, 0, 255)
 
+def debug_log(*args, **kwargs):
+    if __debug__:
+        print("[debug]", *args, **kwargs)
+
 
 class Point:
     def __init__(self, x: float, y: float):
@@ -48,7 +52,7 @@ class FaceExpression:  # (Enum):
     LOCK_IN = const(3)
     HUG_EYES = const(4)
     POG = const(5)
-    FIRE = const(6)
+    FIRE = const(6)#TODO:
     SPIN = const(7)
 
 

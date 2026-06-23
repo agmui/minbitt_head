@@ -17,9 +17,9 @@ def main(env_settings: EnvSettings):
     try:
         # Note: display must be inited first
         # with d as display, env_settings.connection as connection:
-        with d as display, MockConnection(proj_env + sample_data_dir + "data.txt") as connection:
+        # with d as display, MockConnection(proj_env + sample_data_dir + "data.txt") as connection:
         # with d as display, CachedConnection(proj_env+sample_data_dir+"data.txt") as connection:
-        # with d as display, DebugFaceConnection(proj_env+sample_data_dir+"data.txt", display) as connection:
+        with d as display, DebugFaceConnection(proj_env+sample_data_dir+"data.txt", display) as connection:
         # with d as display, BlueToothConnection() as connection:
 
             no_wifi_img = display.load_image(proj_env + "minbitt_pkg/" + "assets/no_wifi.bmp")
@@ -49,7 +49,7 @@ def main(env_settings: EnvSettings):
                         display.draw_line(MINBITT_BLUE, Point(12, HEIGHT // 2), Point(13, HEIGHT // 2))
                     loading += 1
                     loading %= 40
-                    print("waiting for frames")
+                    debug_log("waiting for frames")
                     display.update()
         # TODO: handel Network is unreachable if ip cant be found
     except Exception as e:

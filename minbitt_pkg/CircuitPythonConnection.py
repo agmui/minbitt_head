@@ -20,8 +20,10 @@ class CircuitPythonConnection(ConnectionInterface):
         self.face_data = BlendshapeData()
 
     def __enter__(self):
+
+
         """
-        debug faces:
+        TODO: debug faces:
         1. init face (minbitt head v1)
         2. started ap (list ap) with loading circle saying "waiting for connections
         3. if connection found list ip
@@ -32,22 +34,20 @@ class CircuitPythonConnection(ConnectionInterface):
 
         text_pos = Point(0, 0)
         self.display.draw_text("Minbitt head\nv1.0", text_pos + (0, 1), MINBITT_BLUE)
-        #idk add cool splash screen/expression if you have extra space
         time.sleep(0.2)
 
-        print("starting ap")
+        debug_log("starting ap")
         wifi.radio.start_ap(ssid=self.ap_ssid, password=self.ap_password, max_connections=1)
 
-        # print access point settings
-        print(f"Access point created with SSID: {self.ap_ssid}, password: {self.ap_password}")
         # print IP address
-        print("My IP address is", wifi.radio.ipv4_address_ap)
+        debug_log("My IP address is", wifi.radio.ipv4_address_ap)
 
         echo_time = None
         phone_ip = IPv4Address("0.0.0.0")
         while echo_time is None:
             # TODO: idk flash led or something while waiting
-            print("scanning")
+            self.display.status_led(BLUE)
+            debug_log("scanning")
             wifi.radio.start_scanning_networks()
             wifi.radio.stop_scanning_networks()
             for i in range(10):
@@ -61,27 +61,27 @@ class CircuitPythonConnection(ConnectionInterface):
                     self.display.draw_circle(MINBITT_BLUE, text_pos + (40, 13), 1)
                 self.display.update()
                 if len(wifi.radio.stations_ap) > 0:
-                    print(wifi.radio.stations_ap)#TODO: can randomly get index out of range error?
+                    debug_log(wifi.radio.stations_ap)#TODO: can randomly get index out of range error?
                     if wifi.radio.stations_ap[0].ipv4_address is not None:
                         break
                 time.sleep(0.4)
             else:
-                print("starting over")
+                debug_log("starting over")
                 continue
-            print(wifi.radio.stations_ap)
+            debug_log(wifi.radio.stations_ap)
             phone_ip = wifi.radio.stations_ap[
                 0].ipv4_address  # TODO: idk check is None sometimes can happen if too fast
-            print("ping", phone_ip)
+            debug_log("ping", phone_ip)
             echo_time = wifi.radio.ping(phone_ip, timeout=1)  # to test connection after finding phone ip addr
-            print("echo_time", echo_time)
+            debug_log("echo_time", echo_time)
 
-        print("creating socket pool")
+        debug_log("creating socket pool")
         pool = SocketPool(wifi.radio)
 
-        print("creating UDP socket")
+        debug_log("creating UDP socket")
         udpClntSock = pool.socket(SocketPool.AF_INET, SocketPool.SOCK_DGRAM)
 
-        print("creating UDP client")
+        debug_log("creating UDP client")
         self.server = pool.socket(SocketPool.AF_INET, SocketPool.SOCK_DGRAM)
         self.server.bind(("", 49983))
         self.server.settimeout(0.5)
@@ -95,14 +95,14 @@ class CircuitPythonConnection(ConnectionInterface):
             self.display.draw_text("open iFacialMocap", text_pos + (0, 23), MINBITT_BLUE)
             self.display.update()
 
-            print("sending", data)
+            debug_log("sending", data)
             udpClntSock.sendto(data, (str(phone_ip), self.port))
             buf = bytearray(1024)
             try:
                 response = self.server.recvfrom_into(buf)
             except OSError:
                 # TODO: handel case if phone disconnects from ap by checking ping?
-                print("retrying")
+                debug_log("retrying")
 
         return self
 

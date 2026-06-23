@@ -110,7 +110,7 @@ class LedDisplay(DisplayInterface):
 
     def load_image(self, image_path, flipped=False):
         bitmap, img_palette = adafruit_imageload.load(image_path, bitmap=displayio.Bitmap, palette=displayio.Palette)
-        print(image_path, img_palette)
+        debug_log(image_path, img_palette)
 
         if flipped:
             for x in range(bitmap.width // 2):
@@ -149,7 +149,7 @@ class LedDisplay(DisplayInterface):
 
     def load_gif(self, gif_path: str) -> tuple[gifio.OnDiskGif, displayio.TileGrid]:
         odg = gifio.OnDiskGif(gif_path)
-        print(gif_path, odg.palette, odg.frame_count)
+        debug_log(gif_path, odg.palette, odg.frame_count)
         odg.next_frame()
         face = displayio.TileGrid(
             odg.bitmap,
@@ -180,11 +180,11 @@ class LedDisplay(DisplayInterface):
         file_ending = file_path[-3:]
         if file_ending == "wav":
             wav = audiocore.WaveFile(file_path)
-            print(f'{file_path}: samplerate {wav.sample_rate}, bits per sample {wav.bits_per_sample}')
+            debug_log(f'{file_path}: samplerate {wav.sample_rate}, bits per sample {wav.bits_per_sample}')
             return wav
         elif file_ending == "mp3":
             mp3 = audiomp3.MP3Decoder(file_path)
-            print(f'{file_path}: samplerate {mp3.sample_rate} bits per sample {mp3.bits_per_sample}')
+            debug_log(f'{file_path}: samplerate {mp3.sample_rate} bits per sample {mp3.bits_per_sample}')
             return mp3
         else:
             raise Exception(f"unsupported filetype: {file_ending}")
@@ -247,7 +247,7 @@ class LedDisplay(DisplayInterface):
         if __debug__:
             fps = f"FPS: {1 / dt:4.4f} | avg FPS:"
             self.avg[self.i] = 1 / dt
-            # print(fps, sum(self.avg) / 20)
+            # debug_log(fps, sum(self.avg) / 20)
             self.i += 1
             self.i %= 20
         self.old_time = post_sleep

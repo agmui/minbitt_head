@@ -81,7 +81,6 @@ class MinBittAnimation(AnimationInterface):
         self.tv_glitch_line = 0
         self.tv_glitch_animation = False
         self.prev_input = FaceExpression.NA
-        self.fire_gif = self.display.load_gif(proj_env + project_dir + "assets/fire.gif")
         self.spinbitt_gif = self.display.load_gif(proj_env + project_dir + "assets/spinbitt.gif")
 
     def animate_face(self, face_data: BlendshapeData, head_input: HeadInput) -> None:
@@ -113,7 +112,7 @@ class MinBittAnimation(AnimationInterface):
             self.display.blit(self.pog_expr, Point(0, 0))
             return
         elif head_input.face_expr == FaceExpression.FIRE:
-            self.display.draw_gif(self.fire_gif, Point(10, 0))
+            #TODO:
             return
         elif head_input.face_expr == FaceExpression.SPIN:
             self.display.draw_gif(self.spinbitt_gif, Point(0,0))
@@ -182,7 +181,6 @@ class MinBittAnimation(AnimationInterface):
             t = (eyeWide - 45) / (70 - 45)
             final_mouth_pos = lerp(self.mouth_pos, self.mouth_pos + (0, 4), t)
         mouth_dx = final_mouth_pos.x - self.mouth_pos.x
-        # print(mouth_dx)
         mouth_form = ((face_data.mouth_form + 100) / 200.0) * self.mouth_tune
         new_p0 = lerp(self.p0_frame1.x, self.p0_frame2.x, mouth_form - eyeWide * 0.005)
         new_p2 = lerp(self.p2_frame1.x, self.p2_frame2.x, mouth_form - eyeWide * 0.005)  # TODO: tune
