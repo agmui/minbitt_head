@@ -14,15 +14,11 @@ import busio # for i2c
 import audiobusio
 import audiomp3
 import neopixel_write
+import ulab
 
 from minbitt_pkg.DisplayInterface import *
 
 
-def rgb24_to_rgb16(color: int):
-    r5 = color >> 19
-    g6 = (color >> 10) & 0x3f
-    b5 = (color >> 3) & 0x1f
-    return r5 << 11 | g6 << 5 | b5
 
 
 class LedDisplay(DisplayInterface):
@@ -41,7 +37,7 @@ class LedDisplay(DisplayInterface):
         self.use_controller = use_controller
         if self.use_controller:
             self.uart = busio.UART(board.TX, board.A0, baudrate=115200, parity=busio.UART.Parity.EVEN, stop=2, receiver_buffer_size=1)
-        self.prev_controller_input = HeadInput(True, FaceExpression.NA)
+        self.prev_controller_input = ControllerInput(True, FaceExpression.NA)
 
         self.speaker = speaker
 
@@ -90,6 +86,9 @@ class LedDisplay(DisplayInterface):
 
     def get_height(self) -> int:
         return self.HEIGHT
+
+    def get_FPS(self) -> int:
+        return self.FPS
 
     def draw_line(self, color: color_t, start_pos: Point, end_pos: Point, width: int = 1):
         """
@@ -193,7 +192,7 @@ class LedDisplay(DisplayInterface):
         if not self.speaker.playing:
             self.speaker.play(audio, loop=False)
 
-    def read_input(self) -> HeadInput:
+    def read_input(self) -> ControllerInput:
         if self.use_controller:
             raw_data = self.uart.read(self.uart.in_waiting)
             if raw_data == b'' or raw_data is None:
@@ -203,19 +202,19 @@ class LedDisplay(DisplayInterface):
                 if self.speaker.playing:
                     self.speaker.pause()
                     self.speaker.stop()
-                self.prev_controller_input = HeadInput(True, FaceExpression.NA)
+                self.prev_controller_input = ControllerInput(True, FaceExpression.NA)
             elif data == 1:
-                self.prev_controller_input = HeadInput(True, FaceExpression.QUESTION)
+                self.prev_controller_input = ControllerInput(True, FaceExpression.QUESTION)
             elif data == 2:
-                self.prev_controller_input = HeadInput(True, FaceExpression.LOCK_IN)
+                self.prev_controller_input = ControllerInput(True, FaceExpression.LOCK_IN)
             elif data == 4:
-                self.prev_controller_input = HeadInput(True, FaceExpression.HUG_EYES)
+                self.prev_controller_input = ControllerInput(True, FaceExpression.HUG_EYES)
             elif data == 8:
-                self.prev_controller_input = HeadInput(True, FaceExpression.POG)
+                self.prev_controller_input = ControllerInput(True, FaceExpression.POG)
             elif data == 16:
-                self.prev_controller_input = HeadInput(True, FaceExpression.SPIN)
+                self.prev_controller_input = ControllerInput(True, FaceExpression.SPIN)
             return self.prev_controller_input
-        return HeadInput(True, FaceExpression.NA)
+        return ControllerInput(True, FaceExpression.NA)
 
     def status_led(self, color: color_t):
         #TODO: idk make it so when tracking not detected turn led orange or something
@@ -223,13 +222,18 @@ class LedDisplay(DisplayInterface):
         neopixel_write.neopixel_write(self.neopixel, bytearray([c[1] >> 3, c[0] >> 3, c[2] >> 3]))
         self.led.value = color == GREEN
 
+    def frame_buffer(self):  # TODO: Test
+        return ulab.numpy.frombuffer(self.background_bitmap, dtype=ulab.numpy.uint16)
+
+    def dirty(self, arr, x1: int = 0, y1: int = 0, x2: int = -1, y2: int = -1):
+        self.background_bitmap.dirty(x1, y1, x2, y2)
 
     def update(self, face_data: BlendshapeData = None):
         self.led_display.refresh()
         # met_deadline = self.led_display.refresh(target_frames_per_second=self.FPS)
         self.background_bitmap.fill(0)
 
-        #TODO: idk figure out if you can just put a big if statement here
+        # TODO: idk figure out if you can just put a big if statement here
         for i in range(1, len(self.led_display.root_group)):  # clearing gifs
             if not self.led_display.root_group[i].hidden:
                 self.led_display.root_group[i].hidden = True
@@ -252,3 +256,4 @@ class LedDisplay(DisplayInterface):
             self.i += 1
             self.i %= 20
         self.old_time = post_sleep
+        return dt

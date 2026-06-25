@@ -2,17 +2,6 @@ from minbitt_pkg.DisplayInterface import *
 from minbitt_pkg.decode_iFacialMocap import *
 
 
-class ConnectionInterface:
-    def __enter__(self):
-        pass
-
-    def get_data(self) -> BlendshapeData:
-        pass
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
-
-
 class DebugFaceConnection(ConnectionInterface):
     def __init__(self, file: str, display: DisplayInterface):
         self.f = open(file, "rb")
@@ -27,6 +16,7 @@ class DebugFaceConnection(ConnectionInterface):
                 # TODO: idk add cute face splash/animation + sound?
             if 150 < i:
                 if i < 250:
+                    self.display.status_led(BLUE if i // 20 % 2 else GREY)
                     self.display.draw_text("connect to myAP", text_pos + (2, 0), MINBITT_BLUE)
                     self.display.draw_text("waiting", text_pos + (2, 8), MINBITT_BLUE)
                     if i % 50 >= 12:
@@ -36,6 +26,7 @@ class DebugFaceConnection(ConnectionInterface):
                     if i % 50 >= 36:
                         self.display.draw_circle(MINBITT_BLUE, text_pos + (42, 13), 1)
             if 250 < i:
+                self.display.status_led(MINBITT_LIGHTBLUE)
                 self.display.draw_text("connect to myAP", text_pos + (2, 0), MINBITT_BLUE)
                 self.display.draw_text("found\n192.168.1.16", text_pos + (2, 8), MINBITT_BLUE)
             if 260 < i:

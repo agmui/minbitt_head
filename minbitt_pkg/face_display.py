@@ -17,14 +17,15 @@ def main(env_settings: EnvSettings):
     try:
         # Note: display must be inited first
         # with d as display, env_settings.connection as connection:
-        # with d as display, MockConnection(proj_env + sample_data_dir + "data.txt") as connection:
+        with d as display, MockConnection(proj_env + sample_data_dir + "data.txt") as connection:
         # with d as display, CachedConnection(proj_env+sample_data_dir+"data.txt") as connection:
-        with d as display, DebugFaceConnection(proj_env+sample_data_dir+"data.txt", display) as connection:
+        # with d as display, DebugFaceConnection(proj_env+sample_data_dir+"data.txt", display) as connection:
         # with d as display, BlueToothConnection() as connection:
 
             no_wifi_img = display.load_image(proj_env + "minbitt_pkg/" + "assets/no_wifi.bmp")
             loading = 0
             running = True
+            dt = 0.0
             while running:
                 try:
                     display.status_led(GREEN)
@@ -33,8 +34,8 @@ def main(env_settings: EnvSettings):
                         running = head_input.running
                         face_data = connection.get_data()
 
-                        minbitt_animation.animate_face(face_data, head_input)
-                        display.update(face_data)
+                        minbitt_animation.animate_face(dt, face_data, head_input, connection)
+                        dt = display.update(face_data)
 
                 except (TimeoutError, OSError) as e:
                     # TODO: maybe have cute tv glitch effect(burst.png burst2.png) here instead of no wifi logo

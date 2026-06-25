@@ -33,7 +33,9 @@ class CircuitPythonConnection(ConnectionInterface):
         """
 
         text_pos = Point(0, 0)
+
         self.display.draw_text("Minbitt head\nv1.0", text_pos + (2, 1), MINBITT_BLUE)
+        self.display.update()
         time.sleep(0.2)
 
         debug_log("starting ap")
@@ -43,9 +45,8 @@ class CircuitPythonConnection(ConnectionInterface):
         debug_log("ssid:",self.ap_ssid)
 
         echo_time = None
-        phone_ip = IPv4Address("0.0.0.0")
+        self.phone_ip = IPv4Address("0.0.0.0")
         while echo_time is None:
-            # TODO: idk flash led or something while waiting
             self.display.status_led(BLUE)
             debug_log("scanning")
             wifi.radio.start_scanning_networks()
@@ -65,20 +66,22 @@ class CircuitPythonConnection(ConnectionInterface):
                     if wifi.radio.stations_ap[0].ipv4_address is not None:
                         break
                 time.sleep(0.4)
+                self.display.status_led(BLUE if i % 2 else BLACK) # flash blue and black while waiting for connection
             else:
                 debug_log("starting over")
                 continue
             debug_log(wifi.radio.stations_ap)
-            phone_ip = wifi.radio.stations_ap[0].ipv4_address  # TODO: idk check is None sometimes can happen if too fast
-            debug_log("ping", phone_ip)
-            echo_time = wifi.radio.ping(phone_ip, timeout=1)  # to test connection after finding phone ip addr
+            self.phone_ip = wifi.radio.stations_ap[0].ipv4_address  # TODO: idk check is None sometimes can happen if too fast
+            debug_log("ping", self.phone_ip)
+            echo_time = wifi.radio.ping(self.phone_ip, timeout=1)  # to test connection after finding phone ip addr
             debug_log("echo_time", echo_time)
 
+        self.display.status_led(MINBITT_LIGHTBLUE)
         debug_log("creating socket pool")
         pool = SocketPool(wifi.radio)
 
         debug_log("creating UDP socket")
-        udpClntSock = pool.socket(SocketPool.AF_INET, SocketPool.SOCK_DGRAM)
+        self.udpClntSock = pool.socket(SocketPool.AF_INET, SocketPool.SOCK_DGRAM)
 
         debug_log("creating UDP client")
         self.server = pool.socket(SocketPool.AF_INET, SocketPool.SOCK_DGRAM)
@@ -89,13 +92,13 @@ class CircuitPythonConnection(ConnectionInterface):
         data = data.encode('utf-8')
         response = None
         while response is None:
-            self.display.draw_text(f"connect to: {self.ap_ssid}", text_pos + (2, 0), MINBITT_BLUE)
-            self.display.draw_text(f"found\n{phone_ip}", text_pos + (2, 8), MINBITT_BLUE)
+            self.display.draw_text(f"Hotspot: {self.ap_ssid}", text_pos + (2, 0), MINBITT_BLUE)
+            self.display.draw_text(f"found\n{self.phone_ip}", text_pos + (2, 8), MINBITT_BLUE)
             self.display.draw_text("open iFacialMocap", text_pos + (2, 23), MINBITT_BLUE)
             self.display.update()
 
             debug_log("sending", data)
-            udpClntSock.sendto(data, (str(phone_ip), self.port))
+            self.udpClntSock.sendto(data, (str(self.phone_ip), self.port))
             buf = bytearray(1024)
             try:
                 response = self.server.recvfrom_into(buf)
@@ -104,6 +107,15 @@ class CircuitPythonConnection(ConnectionInterface):
                 debug_log("retrying")
 
         return self
+
+    def send_data(self, data: str) -> int:
+        """
+        send commands to iFaciallMocap:
+
+            `reset_face("iFacialMocap_lookForward")`
+        """
+        debug_log("sending", data)
+        return self.udpClntSock.sendto(data, (str(self.phone_ip), self.port))
 
     def get_data(self):
         buf = bytearray(1024)
@@ -116,6 +128,8 @@ class CircuitPythonConnection(ConnectionInterface):
         return self.face_data
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        self.udpClntSock.close()
+        self.server.close()
         wifi.radio.stop_ap()
         # TODO: free other objs
 

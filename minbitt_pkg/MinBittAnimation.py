@@ -1,6 +1,7 @@
 from minbitt_pkg.BlendshapeData import BlendshapeData
 from minbitt_pkg.DisplayInterface import *
 from minbitt_pkg.DisplayInterface import AnimationInterface
+from minbitt_pkg.iFacialMocap import ConnectionInterface
 
 
 class MinBittAnimation(AnimationInterface):
@@ -83,17 +84,28 @@ class MinBittAnimation(AnimationInterface):
         self.prev_input = FaceExpression.NA
         self.spinbitt_gif = self.display.load_gif(proj_env + project_dir + "assets/spinbitt.gif")
 
-    def animate_face(self, face_data: BlendshapeData, head_input: HeadInput) -> None:
-        # edge led lighting
-        self.display.draw_line(PINK,Point(0,0), Point(0,self.HEIGHT))# TODO: idk make these cycle rainbow or something
-        self.display.draw_line(PINK,Point(self.WIDTH-1,0), Point(self.WIDTH-1,self.HEIGHT-1))
+        self.rainbow_edge = [RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE, VIOLET, PINK]
+        self.rot = 0
 
-        if self.prev_input != head_input.face_expr:
-            self.prev_input = head_input.face_expr
+    def animate_face(self, dt: float, face_data: BlendshapeData, controller_input: ControllerInput,
+                     connection: ConnectionInterface) -> None:
+        # edge rgb lighting
+        frame_buff = self.display.frame_buffer()
+        for i in range(self.HEIGHT):
+            c = rgb24_to_rgb16(self.rainbow_edge[(i - self.rot) % len(self.rainbow_edge)])
+            frame_buff[i*self.WIDTH] = c
+            frame_buff[i*self.WIDTH+self.WIDTH-1] = c
+        self.rot += round(dt / 0.016)
+        self.rot %= len(self.rainbow_edge)
+        self.display.dirty(frame_buff)
+
+        if self.prev_input != controller_input.face_expr:
+            self.prev_input = controller_input.face_expr
             self.tv_glitch_animation = True
         if self.tv_glitch_animation:
             if self.tv_glitch_line < self.HEIGHT:
-                self.display.draw_line(MINBITT_BLUE, Point(0, self.tv_glitch_line), Point(self.WIDTH, self.tv_glitch_line))
+                self.display.draw_line(MINBITT_BLUE, Point(0, self.tv_glitch_line),
+                                       Point(self.WIDTH, self.tv_glitch_line))
                 self.tv_glitch_line += 7
                 return
             else:
@@ -101,21 +113,22 @@ class MinBittAnimation(AnimationInterface):
                 self.tv_glitch_animation = False
 
         # == face expressions ==
-        if head_input.face_expr == FaceExpression.QUESTION:
+        if controller_input.face_expr == FaceExpression.QUESTION:
             self.display.blit(self.question_expr, Point(0, 0))
             return
-        elif head_input.face_expr == FaceExpression.LOCK_IN:
+        elif controller_input.face_expr == FaceExpression.LOCK_IN:
             self.display.draw_text("LOCK IN", Point(5, self.HEIGHT // 2 - 4), MINBITT_BLUE)
             return
-        elif head_input.face_expr == FaceExpression.POG:
-            self.display.play_audio(self.sound_clips[0]) #TODO: fix audio start point bug by preloading the audio during tv_glitch_animation
+        elif controller_input.face_expr == FaceExpression.POG:
+            self.display.play_audio(self.sound_clips[
+                                        0])  # TODO: fix audio start point bug by preloading the audio during tv_glitch_animation
             self.display.blit(self.pog_expr, Point(0, 0))
             return
-        elif head_input.face_expr == FaceExpression.FIRE:
-            #TODO:
+        elif controller_input.face_expr == FaceExpression.FIRE:
+            connection.send_data("iFacialMocap_lookForward")  # TODO: test
             return
-        elif head_input.face_expr == FaceExpression.SPIN:
-            self.display.draw_gif(self.spinbitt_gif, Point(0,0))
+        elif controller_input.face_expr == FaceExpression.SPIN:
+            self.display.draw_gif(self.spinbitt_gif, Point(0, 0))
             return
 
         # ==================================================================================
@@ -145,7 +158,7 @@ class MinBittAnimation(AnimationInterface):
             if face_data.cheekSquint_L > self.X3_thresh:  # X3 face animation
                 self.display.blit(self.L_X3_eye, left_eye_xy)
             else:
-                if head_input.face_expr == FaceExpression.HUG_EYES and eye_index == 0:  # TODO: idk decide if u like
+                if controller_input.face_expr == FaceExpression.HUG_EYES and eye_index == 0:  # TODO: idk decide if u like
                     self.display.draw_line(MINBITT_LIGHTBLUE, left_eye_xy + Point(0, -30), left_eye_xy + Point(0, 30))
                     self.display.draw_line(MINBITT_LIGHTBLUE, left_eye_xy + Point(-30, 2), left_eye_xy + Point(30, 2))
                 # self.display.blit(self.sus_squint, left_eye_xy + (-3, -1))
@@ -208,7 +221,6 @@ class MinBittAnimation(AnimationInterface):
         # == blush ==
         self.display.blit(self.blush, final_mouth_pos + (33, 8))
         self.display.blit(self.blush, final_mouth_pos + (-19, 8))
-
 
     """
     TODO: maybe to prevent this have an abstract class extend Animation Interface that has already written the deinit

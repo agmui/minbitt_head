@@ -117,8 +117,8 @@ class LedDisplayPalette(DisplayInterface):
         face.hidden = True
         return odg, face
 
-    def read_input(self) -> HeadInput:
-        return HeadInput(True, FaceExpression.NA)
+    def read_input(self) -> ControllerInput:
+        return ControllerInput(True, FaceExpression.NA)
 
     def draw_line(self, color: color_t, start_pos: Point, end_pos: Point, width: int = 1):
         if color not in self.inverse_palette:

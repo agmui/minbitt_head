@@ -5,15 +5,24 @@ from micropython import const
 color_t = int
 
 RED = const(0xff0000)  # (255, 0, 0))
-GREEN = const(0x00ff00)  # (0, 255, 0))
-BLUE = const(0x0000ff)  # (0, 0, 255))
+ORANGE = const(0xffa200)
 YELLOW = const(0xffff00)  # (255, 255, 0))
-MINBITT_BLUE = const(0x5FCDE4)  # (0x5F, 0xCD, 0xE4)
-MINBITT_LIGHTBLUE = const(0x88EBFF)
+GREEN = const(0x00ff00)  # (0, 255, 0))
+MINBITT_LIGHTBLUE = const(0x88ebff)
+MINBITT_BLUE = const(0x5fcde4)  # (0x5F, 0xCD, 0xE4)
+BLUE = const(0x0000ff)  # (0, 0, 255))
+PURPLE = const(0x8400ff)
+VIOLET = const(0xdd00ff)
+PINK = const(0xff00ff)  # (255, 0, 255)
 BLACK = const(0)  # (0, 0, 0)
-WHITE = const(0xFFFFFF)  # (255, 255, 255)
 GREY = const(0x6e6e6e)  # (110, 110, 110)
-PINK = const(0xFF00FF)  # (255, 0, 255)
+WHITE = const(0xffffff)  # (255, 255, 255)
+
+def rgb24_to_rgb16(color: int):
+    r5 = color >> 19
+    g6 = (color >> 10) & 0x3f
+    b5 = (color >> 3) & 0x1f
+    return r5 << 11 | g6 << 5 | b5
 
 def debug_log(*args, **kwargs):
     if __debug__:
@@ -56,7 +65,7 @@ class FaceExpression:  # (Enum):
     SPIN = const(7)
 
 
-class HeadInput:
+class ControllerInput:
     def __init__(self, running: bool, face_expr: FaceExpression):
         self.running: bool = running
         self.face_expr: FaceExpression = face_expr
@@ -74,6 +83,9 @@ class DisplayInterface:
         pass
 
     def get_height(self) -> int:
+        pass
+
+    def get_FPS(self) -> int:
         pass
 
     def draw_line(self, color: color_t, start_pos: Point, end_pos: Point, width: int = 1):
@@ -103,21 +115,36 @@ class DisplayInterface:
     def play_audio(self, audio):
         pass
 
-    def read_input(self) -> HeadInput:
+    def read_input(self) -> ControllerInput:
         pass
 
     def status_led(self, color: color_t):
         pass
 
-    def frame_buffer(self):# TODO: decide
+    def frame_buffer(self) -> np.ndarray[np.uint16]:
+        pass
+
+    def dirty(self, arr, x1: int = 0, y1: int = 0, x2: int = -1, y2: int = -1):
         pass
 
     def update(self, face_data: BlendshapeData = None):
         pass
 
+class ConnectionInterface:
+    def __enter__(self):
+        pass
+
+    def send_data(self, data: str) -> int:
+        return 0
+
+    def get_data(self) -> BlendshapeData:
+        pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
 
 class AnimationInterface:
-    def animate_face(self, face_data: BlendshapeData, head_input: HeadInput) -> None:
+    def animate_face(self, dt: float, face_data: BlendshapeData, head_input: ControllerInput, connection: ConnectionInterface) -> float:
         pass
 
 def bresenham(pixel_buff, color: color_t, start_pos: tuple[int, int], end_pos: tuple[int, int], width: int = 1):

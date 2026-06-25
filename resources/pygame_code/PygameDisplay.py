@@ -1,6 +1,7 @@
 from minbitt_pkg.DisplayInterface import *
 from pygame import *
 import pygame.event
+import numpy as np
 
 
 class PygameDisplay(DisplayInterface):
@@ -14,6 +15,8 @@ class PygameDisplay(DisplayInterface):
         self.DEBUG_TEXT_WIDTH = DEBUG_TEXT_WIDTH
         self.DEBUG_TEXT_HEIGHT = DEBUG_TEXT_HEIGHT
         self.SCREEN_OFFSET = 599
+        self.STATUS_LED_OFFSET = (5, self.SCREEN_OFFSET - 20)
+        self.status_color = GREY
         self.head: Surface = surface.Surface((WIDTH * self.scale, HEIGHT * self.scale))
 
         self.mock_matrix = surface.Surface((WIDTH, HEIGHT))
@@ -24,7 +27,8 @@ class PygameDisplay(DisplayInterface):
         pixel_size = 4
         for x in range(self.WIDTH):
             for y in range(self.HEIGHT):
-                draw.circle(self.hole_mask, (255, 255, 255, 100), (x * self.scale + pixel_size, y * self.scale + pixel_size), pixel_size)
+                draw.circle(self.hole_mask, (255, 255, 255, 100),
+                            (x * self.scale + pixel_size, y * self.scale + pixel_size), pixel_size)
         # == init display ==
         init()
         self.screen = display.set_mode(
@@ -46,6 +50,9 @@ class PygameDisplay(DisplayInterface):
 
     def get_height(self) -> int:
         return self.HEIGHT
+
+    def get_FPS(self) -> int:
+        return self.FPS
 
     def draw_line(self, color: color_t, start_pos: Point, end_pos: Point, width: int = 1):
         draw.line(self.head, color, tuple(start_pos * self.scale), tuple(end_pos * self.scale), width * self.scale)
@@ -114,7 +121,7 @@ class PygameDisplay(DisplayInterface):
             mirror_points(x, y)
 
     def load_image(self, image_path: str, flipped=False) -> Surface:
-        img = image.load(image_path)
+        img = image.load(image_path).convert(self.screen)
         if flipped:
             img = transform.flip(img, True, False)
         img.set_colorkey(Color(self.COLOR_KEY << 8 | 255))
@@ -152,39 +159,56 @@ class PygameDisplay(DisplayInterface):
         if not mixer.get_busy():
             audio.play()
 
-    def read_input(self) -> HeadInput:
+    def read_input(self) -> ControllerInput:
         for event in pygame.event.get():
             if event.type == QUIT or (
                     event.type == KEYDOWN and (event.key == K_ESCAPE or event.key == K_q)):
-                return HeadInput(False, FaceExpression.NA)
+                return ControllerInput(False, FaceExpression.NA)
         if pygame.key.get_pressed()[K_a]:
-            return HeadInput(True, FaceExpression.QUESTION)
+            return ControllerInput(True, FaceExpression.QUESTION)
         elif pygame.key.get_pressed()[K_s]:
-            return HeadInput(True, FaceExpression.LOCK_IN)
+            return ControllerInput(True, FaceExpression.LOCK_IN)
         elif pygame.key.get_pressed()[K_d]:
-            return HeadInput(True, FaceExpression.HUG_EYES)
+            return ControllerInput(True, FaceExpression.HUG_EYES)
         elif pygame.key.get_pressed()[K_f]:
-            return HeadInput(True, FaceExpression.POG)
+            return ControllerInput(True, FaceExpression.POG)
         elif pygame.key.get_pressed()[K_g]:
-            return HeadInput(True, FaceExpression.FIRE)
+            return ControllerInput(True, FaceExpression.FIRE)
         elif pygame.key.get_pressed()[K_z]:
-            return HeadInput(True, FaceExpression.SPIN)
+            return ControllerInput(True, FaceExpression.SPIN)
         if mixer.get_busy():
             mixer.stop()
-        return HeadInput(True, FaceExpression.NA)
+        return ControllerInput(True, FaceExpression.NA)
 
     def status_led(self, color: color_t):
-        draw.circle(self.screen, color, (1,1), 5)
+        self.status_color = color
+
+    def frame_buffer(self) -> np.ndarray[np.uint16]:
+        self._bitdepth_conversion_buf.blit(self.mock_matrix, (0, 0))
+        return np.transpose(surfarray.pixels2d(self._bitdepth_conversion_buf)).reshape(self.WIDTH*self.HEIGHT)
+
+    def dirty(self, arr: np.ndarray[np.uint16], x1: int = 0, y1: int = 0, x2: int = -1, y2: int = -1):
+        """
+        Note: this does not display on the moving head
+        """
+        # surfarray.pixels2d(self.mock_matrix)[:] = arr.reshape((64, 32))
+        surfarray.blit_array(self._bitdepth_conversion_buf, np.transpose(arr.reshape((self.HEIGHT,self.WIDTH)))) # This is a hack
+        self.mock_matrix.blit(self._bitdepth_conversion_buf.convert(self.mock_matrix), (x1, y1))
+        self._bitdepth_conversion_buf.fill(BLACK)
 
     def update(self, face_data: BlendshapeData = BlendshapeData()):
-        self.screen.fill(GREY)
+        # status led
+        output_str_t = self.font.render("status led:", 1, WHITE << 8 | 255)  # 255 is for alpha
+        self.screen.blit(output_str_t, self.STATUS_LED_OFFSET)
+        draw.circle(self.screen, self.status_color,
+                    (self.STATUS_LED_OFFSET[0] + output_str_t.get_width() + 10, self.STATUS_LED_OFFSET[1] + 9), 7)
 
         flipped_img = transform.flip(self.head, True, False)
         rot_img = transform.rotate(flipped_img, face_data.head.az)
         self.screen.blit(rot_img, (face_data.head.x * 1000 + 100, -face_data.head.y * 1000 + 100))
         self.head.fill(BLACK)
 
-
+        # 16 bit filter, this is also a hack
         self._bitdepth_conversion_buf.blit(self.mock_matrix, (0, 0))
         self.screen.blit(transform.scale_by(self._bitdepth_conversion_buf, self.scale), (0, self.SCREEN_OFFSET))
         self.screen.blit(self.hole_mask, (0, self.SCREEN_OFFSET), special_flags=BLEND_RGBA_MULT)
@@ -204,4 +228,6 @@ class PygameDisplay(DisplayInterface):
         # fps_t = font.render(fps, 1, RED)
         # screen.blit(fps_t, (0, 0))
         display.flip()
-        self.clock.tick(self.FPS)
+        self.screen.fill(GREY)
+        dt = self.clock.tick(self.FPS)/1000
+        return dt
