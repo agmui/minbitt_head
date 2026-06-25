@@ -33,14 +33,14 @@ class CircuitPythonConnection(ConnectionInterface):
         """
 
         text_pos = Point(0, 0)
-        self.display.draw_text("Minbitt head\nv1.0", text_pos + (0, 1), MINBITT_BLUE)
+        self.display.draw_text("Minbitt head\nv1.0", text_pos + (2, 1), MINBITT_BLUE)
         time.sleep(0.2)
 
         debug_log("starting ap")
         wifi.radio.start_ap(ssid=self.ap_ssid, password=self.ap_password, max_connections=1)
 
-        # print IP address
-        debug_log("My IP address is", wifi.radio.ipv4_address_ap)
+        # print ssid
+        debug_log("ssid:",self.ap_ssid)
 
         echo_time = None
         phone_ip = IPv4Address("0.0.0.0")
@@ -51,8 +51,8 @@ class CircuitPythonConnection(ConnectionInterface):
             wifi.radio.start_scanning_networks()
             wifi.radio.stop_scanning_networks()
             for i in range(10):
-                self.display.draw_text(f"connect to: {self.ap_ssid}", text_pos + (0, 0), MINBITT_BLUE)
-                self.display.draw_text("waiting", text_pos + (0, 8), MINBITT_BLUE)
+                self.display.draw_text(f"connect to: {self.ap_ssid}", text_pos + (2, 0), MINBITT_BLUE)
+                self.display.draw_text("waiting", text_pos + (2, 8), MINBITT_BLUE)
                 if i >= 2:
                     self.display.draw_circle(MINBITT_BLUE, text_pos + (30, 13), 1)
                 if i >= 5:
@@ -69,8 +69,7 @@ class CircuitPythonConnection(ConnectionInterface):
                 debug_log("starting over")
                 continue
             debug_log(wifi.radio.stations_ap)
-            phone_ip = wifi.radio.stations_ap[
-                0].ipv4_address  # TODO: idk check is None sometimes can happen if too fast
+            phone_ip = wifi.radio.stations_ap[0].ipv4_address  # TODO: idk check is None sometimes can happen if too fast
             debug_log("ping", phone_ip)
             echo_time = wifi.radio.ping(phone_ip, timeout=1)  # to test connection after finding phone ip addr
             debug_log("echo_time", echo_time)
@@ -90,9 +89,9 @@ class CircuitPythonConnection(ConnectionInterface):
         data = data.encode('utf-8')
         response = None
         while response is None:
-            self.display.draw_text(f"connect to: {self.ap_ssid}", text_pos + (0, 0), MINBITT_BLUE)
-            self.display.draw_text(f"found\n{phone_ip}", text_pos + (0, 8), MINBITT_BLUE)
-            self.display.draw_text("open iFacialMocap", text_pos + (0, 23), MINBITT_BLUE)
+            self.display.draw_text(f"connect to: {self.ap_ssid}", text_pos + (2, 0), MINBITT_BLUE)
+            self.display.draw_text(f"found\n{phone_ip}", text_pos + (2, 8), MINBITT_BLUE)
+            self.display.draw_text("open iFacialMocap", text_pos + (2, 23), MINBITT_BLUE)
             self.display.update()
 
             debug_log("sending", data)

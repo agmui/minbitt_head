@@ -1,3 +1,5 @@
+import os
+
 from minbitt_pkg.DisplayInterface import PINK
 from minbitt_pkg.EnvSettings import EnvSettings
 from minbitt_pkg.face_display import main
@@ -9,7 +11,7 @@ FPS = 60
 WIDTH = 64 # TODO: check different width height values
 HEIGHT = 32
 COLOR_KEY = PINK
-proj_env = "/home/agmui/cs/minbitt_head/"
+proj_env = os.getcwd()+"/"#TODO: test
 
 display = PygameDisplay(WIDTH, HEIGHT, COLOR_KEY, FPS)
 

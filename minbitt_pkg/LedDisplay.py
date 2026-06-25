@@ -218,6 +218,7 @@ class LedDisplay(DisplayInterface):
         return HeadInput(True, FaceExpression.NA)
 
     def status_led(self, color: color_t):
+        #TODO: idk make it so when tracking not detected turn led orange or something
         c = color.to_bytes(3, 'little')
         neopixel_write.neopixel_write(self.neopixel, bytearray([c[1] >> 3, c[0] >> 3, c[2] >> 3]))
         self.led.value = color == GREEN

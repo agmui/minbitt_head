@@ -23,24 +23,23 @@ class DebugFaceConnection(ConnectionInterface):
         text_pos = Point(0, 0)
         for i in range(310):
             if i < 100:
-                self.display.draw_text("Minbitt head\nv1.0", text_pos + (0, 1), MINBITT_BLUE)
+                self.display.draw_text("Minbitt head\nv1.0", text_pos + (2, 1), MINBITT_BLUE)
                 # TODO: idk add cute face splash/animation + sound?
             if 150 < i:
                 if i < 250:
-                    self.display.draw_text("connect to myAP", text_pos + (0, 0), MINBITT_BLUE)
-                    self.display.draw_text("waiting", text_pos + (0, 8), MINBITT_BLUE)
+                    self.display.draw_text("connect to myAP", text_pos + (2, 0), MINBITT_BLUE)
+                    self.display.draw_text("waiting", text_pos + (2, 8), MINBITT_BLUE)
                     if i % 50 >= 12:
-                        self.display.draw_circle(MINBITT_BLUE, text_pos + (30, 13), 1)
+                        self.display.draw_circle(MINBITT_BLUE, text_pos + (32, 13), 1)
                     if i % 50 >= 25:
-                        self.display.draw_circle(MINBITT_BLUE, text_pos + (35, 13), 1)
+                        self.display.draw_circle(MINBITT_BLUE, text_pos + (37, 13), 1)
                     if i % 50 >= 36:
-                        self.display.draw_circle(MINBITT_BLUE, text_pos + (40, 13), 1)
+                        self.display.draw_circle(MINBITT_BLUE, text_pos + (42, 13), 1)
             if 250 < i:
-                self.display.draw_text("connect to myAP", text_pos + (0, 0), MINBITT_BLUE)
-                self.display.draw_text("found\n192.168.1.16", text_pos + (0, 8), MINBITT_BLUE)
+                self.display.draw_text("connect to myAP", text_pos + (2, 0), MINBITT_BLUE)
+                self.display.draw_text("found\n192.168.1.16", text_pos + (2, 8), MINBITT_BLUE)
             if 260 < i:
-                self.display.draw_text("open iFacialMocap", text_pos + (0, 23), MINBITT_BLUE)
-                # self.display.draw_text("run iFacialMocap", text_pos + (0, 23), MINBITT_BLUE)
+                self.display.draw_text("open iFacialMocap", text_pos + (2, 23), MINBITT_BLUE)
 
             self.display.update()
             if not self.display.read_input().running:
