@@ -173,7 +173,7 @@ class PygameDisplay(DisplayInterface):
         elif pygame.key.get_pressed()[K_f]:
             return ControllerInput(True, FaceExpression.POG)
         elif pygame.key.get_pressed()[K_g]:
-            return ControllerInput(True, FaceExpression.FIRE)
+            return ControllerInput(True, FaceExpression.LOOK_FORWARD)
         elif pygame.key.get_pressed()[K_z]:
             return ControllerInput(True, FaceExpression.SPIN)
         if mixer.get_busy():

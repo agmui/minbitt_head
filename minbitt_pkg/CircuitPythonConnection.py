@@ -1,3 +1,4 @@
+import os
 from ipaddress import IPv4Address
 import time
 from socketpool import *
@@ -11,10 +12,11 @@ from minbitt_pkg.BlendshapeData import BlendshapeData
 class CircuitPythonConnection(ConnectionInterface):
     def __init__(self, display: DisplayInterface, port=49983):
         # set access point credentials
-        self.ap_ssid = "myAP"  # TODO: pull from file system just in case you forget
-        self.ap_password = "esp32wifipass"
+        self.ap_ssid = os.getenv("MINBITT_HEAD_WIFI_SSID")
+        self.ap_password = os.getenv("MINBITT_HEAD_WIFI_PASSWORD")
         self.port = port
-        # self.buf = bytearray(1024)#TODO: idk do testing
+        self.buf = bytearray(1024)
+
         # https://stackoverflow.com/questions/19671145/how-can-i-quickly-set-a-python-bytearray-to-0
         self.display = display
         self.face_data = BlendshapeData()
@@ -118,13 +120,9 @@ class CircuitPythonConnection(ConnectionInterface):
         return self.udpClntSock.sendto(data, (str(self.phone_ip), self.port))
 
     def get_data(self):
-        buf = bytearray(1024)
         # clears the most recent msg and waits for next to get most uptodate data
-        # msg_size, address = self.server.recvfrom_into(bytearray(1024))
-        msg_size, address = self.server.recvfrom_into(buf)  # Note can also throw OSError: [Errno 116] ETIMEDOUT
-        # TODO: check if preallocating buf bytearray and zeroing out back half garbage with msg_size is faster
-        # decode_iFacialMocap(buf, self.face_data)
-        decode_iFacialMocap_fast(buf, self.face_data)
+        msg_size, sender_ip_addr = self.server.recvfrom_into(self.buf)  # Note can also throw OSError: [Errno 116] ETIMEDOUT
+        decode_iFacialMocap_fast(self.buf, self.face_data) #note:we don't check the sender_ip_addr, could be an expliot
         return self.face_data
 
     def __exit__(self, exc_type, exc_val, exc_tb):

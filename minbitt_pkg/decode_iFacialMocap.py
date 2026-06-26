@@ -32,7 +32,7 @@ _cached_profile = {}
 def decode_iFacialMocap_fast(msg: bytearray, face_data: BlendshapeData):
     blendshape_data, bones_data = msg.rsplit(b'=', 1)
     blendshape_data = blendshape_data.replace(b'-', b'|').split(b'|')[:-1]
-    bones_data = bones_data.replace(b'#', b'|').replace(b',', b'|').split(b'|')[:-1]
+    bones_data = bones_data.replace(b'#', b'|').replace(b',', b'|').split(b'|')#[:-1]
 
     """
     def faster_hash(s) -> int:
@@ -52,12 +52,11 @@ def decode_iFacialMocap_fast(msg: bytearray, face_data: BlendshapeData):
         # res_arr[res_arr[i//2]] = int(val)
     """
 
-    key_trait = bytes(blendshape_data[2])#TODO: idk fix bytearray/bytes problem
-    if key_trait in _cached_profile:  # TODO: write test to compare between a setattr and check if its the same
+    key_trait = bytes(blendshape_data[2]) # has to be cast to bytes because bytearray does not have __hash__() in mpy
+    if key_trait in _cached_profile:
         remap_arr = _cached_profile[key_trait]
         res_arr = face_data.arr
         for i in range(1, 108, 2):
-            # trait = arr[i]
             val = blendshape_data[i]
             res_arr[remap_arr[i // 2]] = int(val)
     else:
@@ -65,7 +64,6 @@ def decode_iFacialMocap_fast(msg: bytearray, face_data: BlendshapeData):
         for i in range(0, len(blendshape_data), 2):
             trait = str(blendshape_data[i], 'ascii')
             val = blendshape_data[i + 1]
-            # setattr(face_data, trait, int(val))
             remap_arr[i // 2] = BlendshapeData.attr_list().index(trait)
             face_data.arr[remap_arr[i // 2]] = int(val)
         _cached_profile[key_trait] = remap_arr

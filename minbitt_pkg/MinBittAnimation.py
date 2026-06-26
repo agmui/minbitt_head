@@ -84,18 +84,21 @@ class MinBittAnimation(AnimationInterface):
         self.prev_input = FaceExpression.NA
         self.spinbitt_gif = self.display.load_gif(proj_env + project_dir + "assets/spinbitt.gif")
 
-        self.rainbow_edge = [RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE, VIOLET, PINK]
+        self.rainbow_edge = list(map(rgb24_to_rgb16,[RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE, VIOLET, PINK]))
         self.rot = 0
+        self.reset_led = False
 
     def animate_face(self, dt: float, face_data: BlendshapeData, controller_input: ControllerInput,
                      connection: ConnectionInterface) -> None:
         # edge rgb lighting
         frame_buff = self.display.frame_buffer()
+        l = len(self.rainbow_edge)
         for i in range(self.HEIGHT):
-            c = rgb24_to_rgb16(self.rainbow_edge[(i - self.rot) % len(self.rainbow_edge)])
-            frame_buff[i*self.WIDTH] = c
-            frame_buff[i*self.WIDTH+self.WIDTH-1] = c
-        self.rot += round(dt / 0.016)
+            c = self.rainbow_edge[(i - self.rot) % l]
+            j = i*self.WIDTH
+            # frame_buff[j] = c
+            # frame_buff[j+self.WIDTH-1] = c
+        self.rot += round(dt * 60)
         self.rot %= len(self.rainbow_edge)
         self.display.dirty(frame_buff)
 
@@ -124,7 +127,7 @@ class MinBittAnimation(AnimationInterface):
                                         0])  # TODO: fix audio start point bug by preloading the audio during tv_glitch_animation
             self.display.blit(self.pog_expr, Point(0, 0))
             return
-        elif controller_input.face_expr == FaceExpression.FIRE:
+        elif controller_input.face_expr == FaceExpression.LOOK_FORWARD:
             connection.send_data("iFacialMocap_lookForward")  # TODO: test
             return
         elif controller_input.face_expr == FaceExpression.SPIN:

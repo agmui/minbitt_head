@@ -133,6 +133,7 @@ class LedDisplay(DisplayInterface):
         bitmaptools.blit(self.background_bitmap, image, clamp(int(pos.x), 0, 64), int(pos.y),
                          skip_source_index=self.COLOR_KEY)
 
+    # decide if there should be a pre render function
     def draw_text(self, output_str: str, pos: Point, color):
         text_area = bitmap_label.Label(self.font, text=output_str).bitmap
         color_rgb565 = self.cc.convert(color)
@@ -169,7 +170,9 @@ class LedDisplay(DisplayInterface):
         odg.next_frame()
 
     def free_gif(self, odg: gifio.OnDiskGif):
-        # where RAM is limited and the first GIF took most of the RAM.
+        for f in self.led_display.root_group:
+            if f.bitmap == odg.bitmap:
+                self.led_display.root_group.remove(f)
         odg.deinit()
         odg = None
         # gc.collect()
@@ -217,12 +220,11 @@ class LedDisplay(DisplayInterface):
         return ControllerInput(True, FaceExpression.NA)
 
     def status_led(self, color: color_t):
-        #TODO: idk make it so when tracking not detected turn led orange or something
-        c = color.to_bytes(3, 'little')
+        c = color.to_bytes(3, 'big')
         neopixel_write.neopixel_write(self.neopixel, bytearray([c[1] >> 3, c[0] >> 3, c[2] >> 3]))
         self.led.value = color == GREEN
 
-    def frame_buffer(self):  # TODO: Test
+    def frame_buffer(self):
         return ulab.numpy.frombuffer(self.background_bitmap, dtype=ulab.numpy.uint16)
 
     def dirty(self, arr, x1: int = 0, y1: int = 0, x2: int = -1, y2: int = -1):
@@ -233,7 +235,6 @@ class LedDisplay(DisplayInterface):
         # met_deadline = self.led_display.refresh(target_frames_per_second=self.FPS)
         self.background_bitmap.fill(0)
 
-        # TODO: idk figure out if you can just put a big if statement here
         for i in range(1, len(self.led_display.root_group)):  # clearing gifs
             if not self.led_display.root_group[i].hidden:
                 self.led_display.root_group[i].hidden = True

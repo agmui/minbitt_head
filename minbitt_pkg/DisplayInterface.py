@@ -61,7 +61,7 @@ class FaceExpression:  # (Enum):
     LOCK_IN = const(3)
     HUG_EYES = const(4)
     POG = const(5)
-    FIRE = const(6)#TODO:
+    LOOK_FORWARD = const(6)
     SPIN = const(7)
 
 
@@ -121,7 +121,7 @@ class DisplayInterface:
     def status_led(self, color: color_t):
         pass
 
-    def frame_buffer(self) -> np.ndarray[np.uint16]:
+    def frame_buffer(self):# -> np.ndarray[np.uint16]:
         pass
 
     def dirty(self, arr, x1: int = 0, y1: int = 0, x2: int = -1, y2: int = -1):
