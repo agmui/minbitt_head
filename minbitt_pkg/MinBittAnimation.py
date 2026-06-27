@@ -24,7 +24,6 @@ class MinBittAnimation(AnimationInterface):
         self.L_X3_eye = display.load_image(proj_env + project_dir + "assets/eye/X3_eye.bmp")
         self.R_X3_eye = display.load_image(proj_env + project_dir + "assets/eye/X3_eye.bmp", True)
         # self.sus_squint = display.load_image(proj_env+sprite_dir+"sprites/eye/sus_squint.bmp")
-        # TODO: make sus_squint with bezier curves/generalize with wide eye animation
 
         # mouth
         self.mouth_top = display.load_image(proj_env + project_dir + "assets/mouth_pixelated_w.bmp")
@@ -50,19 +49,19 @@ class MinBittAnimation(AnimationInterface):
         # add keyframes system
 
         eye_spacing = 40
-        self.L_eyebrow_pos = Point(5, 6)
-        self.R_eyebrow_pos = Point(5 + eye_spacing, 6)
-        self.brow_tune = 0.1  # TODO: add sliders in pygame
-        self.brow_down_tune = 0.05
-
-        self.left_eye_pos = Point(5, 8)
-        self.right_eye_pos = Point(5 + eye_spacing, 8)
+        self.left_eye_pos = Point((self.WIDTH-eye_spacing)//2-3, 7)
+        self.right_eye_pos = Point(self.left_eye_pos.x + eye_spacing, 7)
         self.eye_tune_x = 0.2
         self.eye_tune_y = 0.2
 
+        self.L_eyebrow_pos = Point(self.left_eye_pos.x-2, 4)
+        self.R_eyebrow_pos = Point(self.L_eyebrow_pos.x + eye_spacing-1, 4)
+        self.brow_tune = 0.1
+        self.brow_down_tune = 0.05
+
         self.X3_thresh = 60
-        self.eyeWide_thresh = 45
-        self.eyeWide_thresh_upper = 70
+        self.eyeWide_thresh = 70
+        self.eyeWide_thresh_upper = 80
         self.min_r = 4
         self.max_r = 11
         self.mouth_pos = Point(22, 10)
@@ -84,7 +83,7 @@ class MinBittAnimation(AnimationInterface):
         self.prev_input = FaceExpression.NA
         self.spinbitt_gif = self.display.load_gif(proj_env + project_dir + "assets/spinbitt.gif")
 
-        self.rainbow_edge = list(map(rgb24_to_rgb16,[RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE, VIOLET, PINK]))
+        self.rainbow_edge = list(map(rgb24_to_rgb16, [RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE, VIOLET, PINK]))
         self.rot = 0
         self.reset_led = False
 
@@ -95,7 +94,7 @@ class MinBittAnimation(AnimationInterface):
         l = len(self.rainbow_edge)
         for i in range(self.HEIGHT):
             c = self.rainbow_edge[(i - self.rot) % l]
-            j = i*self.WIDTH
+            j = i * self.WIDTH
             # frame_buff[j] = c
             # frame_buff[j+self.WIDTH-1] = c
         self.rot += round(dt * 60)
@@ -128,49 +127,33 @@ class MinBittAnimation(AnimationInterface):
             self.display.blit(self.pog_expr, Point(0, 0))
             return
         elif controller_input.face_expr == FaceExpression.LOOK_FORWARD:
-            connection.send_data("iFacialMocap_lookForward")  # TODO: test
+            connection.send_data("iFacialMocap_lookForward".encode('utf-8'))
             return
         elif controller_input.face_expr == FaceExpression.SPIN:
             self.display.draw_gif(self.spinbitt_gif, Point(0, 0))
             return
 
         # ==================================================================================
-        # == left eyebrow ==
-        left_eyebrow_start = self.L_eyebrow_pos + (0.0, -self.brow_tune * face_data.browOuterUp_L)
-        left_eyebrow_end = self.L_eyebrow_pos + (
-            10, -self.brow_tune * face_data.browInnerUp + self.brow_down_tune * face_data.browDown_L)
-        # TODO: check if this looks good
-        if face_data.cheekSquint_L <= self.X3_thresh:  # X3 face animation
-            self.display.draw_line(MINBITT_BLUE, left_eyebrow_start, left_eyebrow_end, 1)
 
-        # == right eyebrow ==
-        right_eyebrow_start = self.R_eyebrow_pos + (
-            0, - self.brow_tune * face_data.browInnerUp + self.brow_down_tune * face_data.browDown_R)
-        right_eyebrow_end = self.R_eyebrow_pos + (10, - self.brow_tune * face_data.browOuterUp_R)
-        # TODO: check if this looks good
-        if face_data.cheekSquint_R <= self.X3_thresh:  # X3 face animation
-            self.display.draw_line(MINBITT_BLUE, right_eyebrow_start, right_eyebrow_end, 1)
 
         # == left eye ==
         left_eye_xy = self.left_eye_pos + (
             -face_data.leftEye.y * self.eye_tune_x, face_data.leftEye.p * self.eye_tune_y)
         eye_index = face_data.eyeBlink_L * 5 // 100
         eye_index = eye_index if eye_index < 4 else 3
-
+        left_eye_wide_r = 0
         if face_data.eyeWide_L < self.eyeWide_thresh:  # wide eyes animation
             if face_data.cheekSquint_L > self.X3_thresh:  # X3 face animation
                 self.display.blit(self.L_X3_eye, left_eye_xy)
             else:
-                if controller_input.face_expr == FaceExpression.HUG_EYES and eye_index == 0:  # TODO: idk decide if u like
-                    self.display.draw_line(MINBITT_LIGHTBLUE, left_eye_xy + Point(0, -30), left_eye_xy + Point(0, 30))
-                    self.display.draw_line(MINBITT_LIGHTBLUE, left_eye_xy + Point(-30, 2), left_eye_xy + Point(30, 2))
-                # self.display.blit(self.sus_squint, left_eye_xy + (-3, -1))
-                self.display.blit(self.L_eye[eye_index],
-                                  left_eye_xy + (-3, -1))  # TODO: check math on offset of X3 face
+                if controller_input.face_expr == FaceExpression.HUG_EYES and eye_index == 0:
+                    self.display.draw_line(MINBITT_LIGHTBLUE, left_eye_xy + Point(3, -2), left_eye_xy + Point(3, 7))
+                    self.display.draw_line(MINBITT_LIGHTBLUE, left_eye_xy + Point(-1, 2), left_eye_xy + Point(7, 2))
+                self.display.blit(self.L_eye[eye_index], left_eye_xy)
         else:
-            r = int(lerp(self.min_r, self.max_r, (face_data.eyeWide_L - self.eyeWide_thresh) / (
+            left_eye_wide_r = int(lerp(self.min_r, self.max_r, (face_data.eyeWide_L - self.eyeWide_thresh) / (
                     self.eyeWide_thresh_upper - self.eyeWide_thresh)))
-            self.display.draw_circle(MINBITT_BLUE, left_eye_xy + (3, 3), r)
+            self.display.draw_circle(MINBITT_BLUE, left_eye_xy + (3, 3), left_eye_wide_r)
             self.display.draw_circle(MINBITT_BLUE, left_eye_xy + (3, 3), 0)
 
         # == right eye ==
@@ -178,31 +161,60 @@ class MinBittAnimation(AnimationInterface):
             -face_data.rightEye.y * self.eye_tune_x, face_data.rightEye.p * self.eye_tune_y)
         eye_index = face_data.eyeBlink_R * 5 // 100
         eye_index = eye_index if eye_index < 4 else 3
+        right_eye_wide_r = 0
         if face_data.eyeWide_R < self.eyeWide_thresh:
             if face_data.cheekSquint_R > self.X3_thresh:  # X3 face animation
-                self.display.blit(self.R_X3_eye, right_eye_xy + (0, -1))
+                self.display.blit(self.R_X3_eye, right_eye_xy)
             else:
-                # self.display.blit(self.sus_squint, right_eye_xy + (-3, -1))
+                if controller_input.face_expr == FaceExpression.HUG_EYES and eye_index == 0:
+                    self.display.draw_line(MINBITT_LIGHTBLUE, right_eye_xy + Point(2, -2), right_eye_xy + Point(2, 7))
+                    self.display.draw_line(MINBITT_LIGHTBLUE, right_eye_xy + Point(-2, 2), right_eye_xy + Point(6, 2))
                 self.display.blit(self.R_eye[eye_index], right_eye_xy)
         else:
-            r = int(lerp(self.min_r, self.max_r, (face_data.eyeWide_R - self.eyeWide_thresh) / (
+            right_eye_wide_r = int(lerp(self.min_r, self.max_r, (face_data.eyeWide_R - self.eyeWide_thresh) / (
                     self.eyeWide_thresh_upper - self.eyeWide_thresh)))
-            self.display.draw_circle(MINBITT_BLUE, right_eye_xy + (3, 3), r)
+            self.display.draw_circle(MINBITT_BLUE, right_eye_xy + (3, 3), right_eye_wide_r)
             self.display.draw_circle(MINBITT_BLUE, right_eye_xy + (3, 3), 0)
+
+        # == left eyebrow ==
+        left_eyebrow_follow_eye_offset = ((left_eye_xy-self.left_eye_pos) * 0.5) + (0, - left_eye_wide_r // 2)
+        left_eyebrow_start = (self.L_eyebrow_pos + (0.0, -self.brow_tune * face_data.browOuterUp_L)
+                              + left_eyebrow_follow_eye_offset)
+        left_eyebrow_end = (self.L_eyebrow_pos
+                            + (10, -self.brow_tune * face_data.browInnerUp + self.brow_down_tune * face_data.browDown_L)
+                            + left_eyebrow_follow_eye_offset)
+        if face_data.cheekSquint_L <= self.X3_thresh:  # X3 face animation
+            self.display.draw_line(MINBITT_BLUE, left_eyebrow_start, left_eyebrow_end, 1)
+
+        # == right eyebrow ==
+        # print(left_eye_xy.x, left_eye_xy.y, right_eye_xy.x, right_eye_xy.y)
+        right_eyebrow_follow_eye_offset = ((right_eye_xy-self.right_eye_pos) * 0.5) + (0, - right_eye_wide_r // 2)
+        right_eyebrow_start = (self.R_eyebrow_pos
+                               + (
+                                   0,
+                                   -self.brow_tune * face_data.browInnerUp + self.brow_down_tune * face_data.browDown_R)
+                               + right_eyebrow_follow_eye_offset)
+        right_eyebrow_end = (self.R_eyebrow_pos + (10, - self.brow_tune * face_data.browOuterUp_R)
+                             + right_eyebrow_follow_eye_offset)
+        if face_data.cheekSquint_R <= self.X3_thresh:  # X3 face animation
+            self.display.draw_line(MINBITT_BLUE, right_eyebrow_start, right_eyebrow_end, 1)
 
         # == mouth ==
         final_mouth_pos = self.mouth_pos  # move mouth down if eyeWide animation
         eyeWide = max(face_data.eyeWide_L, face_data.eyeWide_R)
+        mouth_dy = 0
         if eyeWide > self.eyeWide_thresh:
             t = (eyeWide - 45) / (70 - 45)
             final_mouth_pos = lerp(self.mouth_pos, self.mouth_pos + (0, 4), t)
-        mouth_dx = final_mouth_pos.x - self.mouth_pos.x
+            mouth_dy = final_mouth_pos.y - self.mouth_pos.y - 1
         mouth_form = ((face_data.mouth_form + 100) / 200.0) * self.mouth_tune
-        new_p0 = lerp(self.p0_frame1.x, self.p0_frame2.x, mouth_form - eyeWide * 0.005)
-        new_p2 = lerp(self.p2_frame1.x, self.p2_frame2.x, mouth_form - eyeWide * 0.005)  # TODO: tune
-        self.spline.p0 = Point(new_p0,
-                               self.spline.p0.y)  # TODO: if needed make update() func in Point class avoiding reassign
-        self.spline.p2 = Point(new_p2, self.spline.p2.y)  # TODO: sub mouth_dx
+        # min is to account of the case when eyeWide
+        new_p0_x = lerp(self.p0_frame1.x, self.p0_frame2.x, mouth_form - eyeWide * min(0.008, mouth_dy))
+        new_p2_x = lerp(self.p2_frame1.x, self.p2_frame2.x, mouth_form - eyeWide * min(0.008, mouth_dy))
+        new_p0_y = self.p0_frame1.y + mouth_dy
+        new_p2_y = self.p2_frame1.y + mouth_dy
+        self.spline.p0 = Point(new_p0_x, new_p0_y)
+        self.spline.p2 = Point(new_p2_x, new_p2_y)
 
         mouth_open = self.mouth_close_tune * face_data.mouth_open / 10.0  # div by 10 to "keyframe" the important mouth speach range
         scale = sigmoid(0.7 * mouth_open - 2)

@@ -50,6 +50,9 @@ class Point:
         yield self.x
         yield self.y
 
+    def __repr__(self):
+        return f"{self.x}, {self.y}"
+
     def trunc(self) -> tuple[int, int]:
         return int(self.x), int(self.y)
 
@@ -134,8 +137,8 @@ class ConnectionInterface:
     def __enter__(self):
         pass
 
-    def send_data(self, data: str) -> int:
-        return 0
+    def send_data(self, data: bytes) -> int:
+        pass
 
     def get_data(self) -> BlendshapeData:
         pass
@@ -271,7 +274,7 @@ class QuadraticBezierCurve:
             # both x and y, but we only use x.
             intersect0, intersect1 = self.horizontal_line_intersection(y)
             if intersect0 is not None and intersect1 is not None:
-                self.lines[i] = (intersect0, intersect1)
+                self.lines[i] = (intersect0, intersect1) # TODO: IndexError: list assignment index out of range
             elif intersect0 is None and intersect1 is None:
                 # cuz of floating point error the bounding box is not tight
                 # and line might miss the top of the Bézier curve

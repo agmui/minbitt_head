@@ -51,14 +51,14 @@ def main(env_settings: EnvSettings):
                     display.status_led(YELLOW)
                     reset_led_to_green = True
                     display.blit(no_wifi_img, Point(0, 0))
+                    if loading >= 5:
+                        display.draw_circle(MINBITT_BLUE, Point(4, HEIGHT // 2), 0)
                     if loading >= 10:
-                        display.draw_line(MINBITT_BLUE, Point(4, HEIGHT // 2), Point(5, HEIGHT // 2))
-                    if loading >= 20:
-                        display.draw_line(MINBITT_BLUE, Point(8, HEIGHT // 2), Point(9, HEIGHT // 2))
-                    if loading >= 30:
-                        display.draw_line(MINBITT_BLUE, Point(12, HEIGHT // 2), Point(13, HEIGHT // 2))
+                        display.draw_circle(MINBITT_BLUE, Point(8, HEIGHT // 2), 0)
+                    if loading >= 15:
+                        display.draw_circle(MINBITT_BLUE, Point(12, HEIGHT // 2), 0)
                     loading += 1
-                    loading %= 40
+                    loading %= 20
                     debug_log("waiting for frames")
                     display.update()
         # TODO: handel Network is unreachable if ip cant be found

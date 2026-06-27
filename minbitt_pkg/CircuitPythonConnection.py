@@ -57,11 +57,11 @@ class CircuitPythonConnection(ConnectionInterface):
                 self.display.draw_text(f"connect to: {self.ap_ssid}", text_pos + (2, 0), MINBITT_BLUE)
                 self.display.draw_text("waiting", text_pos + (2, 8), MINBITT_BLUE)
                 if i >= 2:
-                    self.display.draw_circle(MINBITT_BLUE, text_pos + (30, 13), 1)
+                    self.display.draw_circle(MINBITT_BLUE, text_pos + (30, 13), 0)
                 if i >= 5:
-                    self.display.draw_circle(MINBITT_BLUE, text_pos + (35, 13), 1)
+                    self.display.draw_circle(MINBITT_BLUE, text_pos + (35, 13), 0)
                 if i >= 8:
-                    self.display.draw_circle(MINBITT_BLUE, text_pos + (40, 13), 1)
+                    self.display.draw_circle(MINBITT_BLUE, text_pos + (40, 13), 0)
                 self.display.update()
                 if len(wifi.radio.stations_ap) > 0:
                     debug_log(wifi.radio.stations_ap)#TODO: can randomly get index out of range error?
@@ -87,8 +87,8 @@ class CircuitPythonConnection(ConnectionInterface):
 
         debug_log("creating UDP client")
         self.server = pool.socket(SocketPool.AF_INET, SocketPool.SOCK_DGRAM)
-        self.server.bind(("", 49983))
-        self.server.settimeout(0.5)
+        self.server.bind(("", self.port))
+        self.server.settimeout(0.1)
 
         data = "iFacialMocap_sahuasouryya9218sauhuiayeta91555dy3719"
         data = data.encode('utf-8')
@@ -110,7 +110,7 @@ class CircuitPythonConnection(ConnectionInterface):
 
         return self
 
-    def send_data(self, data: str) -> int:
+    def send_data(self, data: bytes) -> int:
         """
         send commands to iFaciallMocap:
 

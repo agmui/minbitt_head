@@ -20,11 +20,11 @@ class DebugFaceConnection(ConnectionInterface):
                     self.display.draw_text("connect to myAP", text_pos + (2, 0), MINBITT_BLUE)
                     self.display.draw_text("waiting", text_pos + (2, 8), MINBITT_BLUE)
                     if i % 50 >= 12:
-                        self.display.draw_circle(MINBITT_BLUE, text_pos + (32, 13), 1)
+                        self.display.draw_circle(MINBITT_BLUE, text_pos + (32, 13), 0)
                     if i % 50 >= 25:
-                        self.display.draw_circle(MINBITT_BLUE, text_pos + (37, 13), 1)
+                        self.display.draw_circle(MINBITT_BLUE, text_pos + (37, 13), 0)
                     if i % 50 >= 36:
-                        self.display.draw_circle(MINBITT_BLUE, text_pos + (42, 13), 1)
+                        self.display.draw_circle(MINBITT_BLUE, text_pos + (42, 13), 0)
             if 250 < i:
                 self.display.status_led(MINBITT_LIGHTBLUE)
                 self.display.draw_text("connect to myAP", text_pos + (2, 0), MINBITT_BLUE)
